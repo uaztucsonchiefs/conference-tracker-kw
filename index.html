@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Conference Tracker · University of Arizona–Tucson Internal Medicine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --bg:#F4F5F2;
+  --panel:#FFFFFF;
+  --panel-2:#FBFCFA;
+  --line:#E2E6E0;
+  --line-soft:#EDEFEA;
+  --saguaro:#3A9268;
+  --saguaro-d:#2A6F50;
+  --saguaro-tint:#EEF5F0;
+  --dusk:#1C2530;
+  --muted:#6A7480;
+  --faint:#98A1AB;
+  --sky:#4E7CA1;
+  --sky-tint:#EBF2F7;
+  --adobe:#B65E2E;
+  --adobe-tint:#F8EEE4;
+  --brick:#A93B2A;
+  --brick-tint:#F8EAE7;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --sans:'IBM Plex Sans',system-ui,sans-serif;
+  --disp:'Archivo',var(--sans);
+  --shadow:0 1px 2px rgba(28,37,48,.05), 0 3px 12px rgba(28,37,48,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--dusk);font-family:var(--sans);min-height:100vh;font-size:14px;
+  background-image:radial-gradient(ellipse 90% 260px at 50% -60px, rgba(58,146,104,.07), transparent)}
+body::before{content:"";position:fixed;top:0;left:0;right:0;height:3px;z-index:80;
+  background:linear-gradient(90deg,#3a9268,#2a6f50)}
+.wrap{max-width:540px;margin:0 auto;padding:0 14px 96px}
+@media(min-width:900px){.wrap.admin-wide{max-width:900px}}
+
+/* ============ HEADER ============ */
+header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.hd-top{max-width:540px;margin:0 auto;display:flex;align-items:center;gap:11px;padding:11px 14px}
+.hd-mark{width:34px;height:40px;flex-shrink:0}
+.hd-title{font-family:var(--disp);font-weight:700;font-size:16.5px;letter-spacing:-.01em;color:var(--dusk)}
+.hd-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.hd-clock{margin-left:auto;text-align:right}
+.hd-clock .t{font-family:var(--mono);font-size:13.5px;font-weight:600;color:var(--saguaro-d)}
+.hd-clock .d{font-family:var(--mono);font-size:8.5px;color:var(--faint);letter-spacing:.06em}
+.ridge{display:block;width:100%;max-width:540px;margin:0 auto;height:14px}
+
+/* ============ TABS ============ */
+nav{position:fixed;bottom:0;left:0;right:0;z-index:60;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);padding:7px 10px calc(9px + env(safe-area-inset-bottom))}
+.tabs{max-width:540px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tab{border:1px solid transparent;background:transparent;color:var(--muted);border-radius:9px;padding:9px 2px;
+  cursor:pointer;text-align:center;font-family:var(--disp);font-size:12px;font-weight:700;transition:all .13s}
+.tab.on{background:linear-gradient(180deg,#3a9268,#2a6f50);color:#fff;box-shadow:0 2px 8px rgba(42,111,80,.3)}
+.tab:not(.on):hover{background:var(--saguaro-tint);color:var(--saguaro-d)}
+
+/* ============ SHARED ============ */
+.view{display:none;padding-top:16px}
+.view.on{display:block;animation:vin .2s ease}
+@keyframes vin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.view.on{animation:none}}
+.eyebrow{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;letter-spacing:.1em;color:var(--faint);text-transform:uppercase;margin-bottom:8px}
+.eyebrow::before{content:"";width:3px;height:11px;border-radius:2px;background:linear-gradient(180deg,#3a9268,#2a6f50);flex-shrink:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 16px;margin-bottom:13px;box-shadow:var(--shadow)}
+h2{font-family:var(--disp);font-size:18.5px;font-weight:700;letter-spacing:-.01em;margin-bottom:4px;color:var(--dusk)}
+h3{font-size:14px;font-weight:700;color:var(--dusk)}
+.sub{color:var(--muted);font-size:13px;line-height:1.55}
+.mono{font-family:var(--mono)}
+.btn{display:block;width:100%;border:none;border-radius:10px;cursor:pointer;font-family:var(--disp);
+  font-weight:700;font-size:13.5px;letter-spacing:.01em;padding:13px;transition:all .14s}
+.btn:active{transform:scale(.99)}
+.btn-primary{background:linear-gradient(180deg,#3a9268,#2a6f50);color:#fff;box-shadow:0 2px 8px rgba(42,111,80,.28)}
+.btn-primary:hover{box-shadow:0 4px 14px rgba(42,111,80,.36);transform:translateY(-1px)}
+.btn-ghost{background:var(--panel);border:1px solid var(--line);color:var(--muted);font-size:12.5px;padding:10px}
+.btn-ghost:hover{border-color:var(--saguaro);color:var(--saguaro-d);background:var(--panel-2)}
+.btn-sm{width:auto;display:inline-block;padding:7px 13px;font-size:12px;border-radius:8px}
+input[type=email],input[type=date],input[type=text],input[type=number],input[type=password],select,textarea{
+  width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;color:var(--dusk);
+  font-family:var(--sans);font-size:13.5px;padding:11px 12px;outline:none;transition:border-color .13s}
+textarea{resize:vertical;line-height:1.5;font-family:var(--mono);font-size:12px}
+input:focus,select:focus,textarea:focus{border-color:var(--saguaro);box-shadow:0 0 0 3px rgba(58,146,104,.14)}
+:focus-visible{outline:2px solid var(--saguaro);outline-offset:2px}
+.sess-btn{display:block;width:100%;text-align:left;padding:13px 14px;border:1px solid var(--line);border-radius:10px;
+  background:var(--panel-2);cursor:pointer;margin-bottom:7px;transition:all .13s}
+.sess-btn{transition:all .14s}
+.sess-btn:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+.sess-btn .st{font-family:var(--disp);font-weight:700;font-size:13.5px;color:var(--dusk)}
+.sess-btn .sm{font-family:var(--mono);font-size:9.5px;color:var(--muted);margin-top:2px;letter-spacing:.03em}
+.sess-btn.on{border-color:var(--saguaro);background:var(--saguaro-tint)}
+.sess-btn.on .st{color:var(--saguaro-d)}
+.house-chip{display:inline-flex;gap:5px;align-items:center;font-size:10.5px;font-weight:700;border:1px solid var(--line);
+  border-radius:99px;padding:4px 10px;margin:3px 4px 0 0;background:var(--panel-2);color:var(--muted)}
+.house-chip b{color:var(--saguaro-d);font-family:var(--mono)}
+label.fld{display:block;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.04em;margin:12px 0 5px;text-transform:uppercase}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;border-radius:99px;
+  padding:4px 10px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted)}
+.chip.ok{background:var(--saguaro-tint);border-color:#CBE0D2;color:var(--saguaro-d)}
+.chip.warn{background:var(--adobe-tint);border-color:#E8CBB1;color:var(--adobe)}
+.chip.info{background:var(--sky-tint);border-color:#C9D9E6;color:var(--sky)}
+.chip.mono{font-family:var(--mono);font-weight:600}
+.msg{border-radius:9px;padding:11px 13px;font-size:12.5px;margin:10px 0;display:none;line-height:1.5}
+.msg.err{background:var(--brick-tint);border:1px solid #E4C0B8;color:var(--brick)}
+.msg.warn{background:var(--adobe-tint);border:1px solid #E8CBB1;color:var(--adobe)}
+.msg.ok{background:var(--saguaro-tint);border:1px solid #CBE0D2;color:var(--saguaro-d)}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:13px}
+.stat{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--saguaro);border-radius:11px;padding:12px 6px;text-align:center;box-shadow:var(--shadow)}
+.stat.adobe{border-top-color:var(--adobe)}
+.stat.sky{border-top-color:var(--sky)}
+.stat.brick{border-top-color:var(--brick)}
+.stat .n{font-family:var(--mono);font-size:21px;font-weight:700;color:var(--saguaro-d)}
+.stat.adobe .n{color:var(--adobe)}
+.stat.sky .n{color:var(--sky)}
+.stat.brick .n{color:var(--brick)}
+.stat .l{font-size:9px;font-weight:700;letter-spacing:.09em;color:var(--faint);margin-top:3px;text-transform:uppercase}
+.hide{display:none!important}
+.divider{height:1px;background:var(--line);margin:15px 0}
+
+/* ============ RESIDENT ============ */
+.conf-banner{display:flex;gap:11px;align-items:center;background:var(--saguaro-tint);border:1px solid #CBE0D2;
+  border-radius:10px;padding:12px;margin:13px 0}
+.live-dot{width:9px;height:9px;border-radius:50%;background:var(--saguaro-d);flex-shrink:0;
+  box-shadow:0 0 0 4px rgba(58,146,104,.16);animation:pulse 2.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+@media(prefers-reduced-motion:reduce){.live-dot{animation:none}}
+.conf-name{font-weight:700;font-size:14px}
+.conf-meta{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:.03em}
+.code-boxes{display:flex;gap:9px;justify-content:center;margin:16px 0 8px}
+.code-box{width:54px;height:64px;background:linear-gradient(180deg,#FBFCFA,#F1F4EF);border:1.5px solid var(--line);border-radius:12px;
+  box-shadow:inset 0 2px 5px rgba(28,37,48,.04);
+  font-family:var(--mono);font-size:28px;font-weight:700;color:var(--saguaro-d);text-align:center;outline:none;
+  caret-color:var(--saguaro);transition:border-color .13s,box-shadow .13s}
+.code-box:focus{border-color:var(--saguaro);box-shadow:0 0 0 3px var(--saguaro-tint)}
+.code-box.err{border-color:var(--brick);color:var(--brick);animation:shake .3s}
+@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.hint{text-align:center;font-size:11.5px;color:var(--faint);margin-bottom:12px}
+.roster-hit{display:flex;align-items:center;gap:11px;background:var(--panel-2);border:1px solid var(--line);
+  border-radius:10px;padding:10px 12px;margin:12px 0}
+.roster-hit .avatar{width:36px;height:36px;border-radius:50%;background:var(--saguaro-d);color:#fff;
+  font-weight:700;font-size:12.5px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.roster-hit .nm{font-weight:700;font-size:14px}
+.roster-hit .cls{font-family:var(--mono);font-size:9.5px;color:var(--saguaro-d);letter-spacing:.07em;margin-top:1px}
+.signal-row{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+.success-head{display:flex;flex-direction:column;align-items:center;padding:6px 0 2px}
+.checkring{width:70px;height:70px;margin-bottom:10px}
+.checkring .c{stroke:var(--saguaro);stroke-width:3;fill:var(--saguaro-tint);stroke-dasharray:220;stroke-dashoffset:220;animation:draw .6s ease-out forwards}
+.checkring .k{stroke:var(--saguaro-d);stroke-width:4;fill:none;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:60;stroke-dashoffset:60;animation:draw .45s ease-out .4s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+@media(prefers-reduced-motion:reduce){.checkring .c,.checkring .k{animation:none;stroke-dashoffset:0}}
+.big-status{font-family:var(--disp);font-size:20px;font-weight:700;text-align:center;color:var(--saguaro-d)}
+.success-head{background:radial-gradient(ellipse 70% 90px at 50% 30%, rgba(58,146,104,.09), transparent);border-radius:12px}
+.demo-panel{border-style:dashed;background:var(--panel-2);box-shadow:none}
+.demo-panel .toggles{display:flex;flex-direction:column;gap:9px;margin-top:9px}
+.tgl{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted);cursor:pointer}
+.tgl input{accent-color:var(--adobe);width:16px;height:16px}
+
+/* ============ PRESENTER ============ */
+.pcode-row{display:flex;gap:clamp(8px,2vw,16px);justify-content:center;margin:16px 0 6px}
+.pdigit{width:clamp(64px,17vw,150px);height:clamp(84px,22vw,190px);display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#FBFCFA,#F1F4EF);border:1.5px solid var(--line);border-radius:clamp(12px,2vw,20px);
+  font-family:var(--mono);font-weight:700;font-size:clamp(46px,13vw,120px);color:var(--saguaro-d);
+  box-shadow:inset 0 2px 6px rgba(28,37,48,.05), 0 2px 10px rgba(28,37,48,.05);transition:transform .18s}
+.pdigit.tick{transform:scale(1.05)}
+@media(prefers-reduced-motion:reduce){.pdigit.tick{transform:none}}
+#p-card:fullscreen{background:var(--bg);padding:5vh 7vw;overflow:auto;border:none;border-radius:0}
+#p-card:fullscreen .pdigit{width:clamp(120px,16vw,220px);height:clamp(160px,21vw,290px);font-size:clamp(90px,12vw,180px)}
+.ring-wrap{display:flex;justify-content:center;margin:6px 0}
+.ring{transform:rotate(-90deg)}
+.ring .bgc{stroke:var(--line-soft);fill:none;stroke-width:5}
+.ring .fgc{stroke:var(--saguaro);fill:none;stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset .2s linear}
+.ring-label{font-family:var(--mono);font-size:12px;font-weight:600;fill:var(--muted);transform:rotate(90deg);transform-origin:37px 37px;text-anchor:middle;dominant-baseline:central}
+.qr-holder{display:flex;justify-content:center;margin:12px 0 8px}
+#qrbox{background:#fff;padding:11px;border-radius:11px;border:1px solid var(--line)}
+.pres-meta{text-align:center;font-family:var(--mono);font-size:10px;color:var(--faint);letter-spacing:.06em;line-height:1.8}
+.feed{list-style:none;margin-top:8px}
+.feed li{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line-soft);font-size:13px;animation:vin .22s ease}
+.feed li:last-child{border-bottom:none}
+.feed .dot{width:7px;height:7px;border-radius:50%;background:var(--saguaro);flex-shrink:0}
+.feed .dot.flag{background:var(--adobe)}
+.feed .who{font-weight:600}
+.feed .cls{font-family:var(--mono);font-size:9.5px;color:var(--faint)}
+.feed .tm{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--faint)}
+
+/* ============ SCHEDULE / ADMIN ============ */
+.day-group{margin-bottom:4px}
+.day-label{display:flex;align-items:center;gap:8px;font-family:var(--disp);font-size:10.5px;font-weight:700;letter-spacing:.09em;color:var(--muted);text-transform:uppercase;
+  padding:10px 2px 6px;margin-bottom:7px}
+.day-label::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+.conf-row{display:flex;align-items:center;gap:10px;padding:10px 11px;border:1px solid var(--line);
+  border-radius:10px;margin-bottom:7px;background:var(--panel-2);transition:border-color .13s}
+.conf-row:hover{border-color:var(--saguaro)}
+.conf-row.live{background:var(--saguaro-tint);border-color:#CBE0D2}
+.conf-row .ci{flex:1;min-width:0}
+.conf-row .ct{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conf-row .cm{font-family:var(--mono);font-size:9.5px;color:var(--muted);margin-top:2px;letter-spacing:.02em}
+.conf-row .badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
+.conf-row .att{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--saguaro-d);white-space:nowrap}
+.conf-row .att small{display:block;font-size:8px;color:var(--faint);font-weight:600;letter-spacing:.08em;text-align:right}
+.mini-btn{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:7px;
+  padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:.12s}
+.mini-btn:hover{border-color:var(--saguaro);color:var(--saguaro-d);background:var(--saguaro-tint)}
+.flag-item{border-left:3px solid var(--adobe);padding:10px 12px;background:var(--panel-2);border-radius:0 9px 9px 0;margin-bottom:8px}
+.flag-item .fr{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.flag-item .who{font-weight:700;font-size:13px}
+.flag-item .why{font-family:var(--mono);font-size:10px;color:var(--adobe);margin-top:4px;letter-spacing:.02em;line-height:1.7}
+.qbtns{display:flex;gap:8px;margin-top:9px}
+.qbtn{flex:1;border-radius:7px;border:1px solid var(--line);background:var(--panel);color:var(--muted);
+  font-size:11.5px;font-weight:700;padding:8px;cursor:pointer}
+.qbtn.ok:hover{border-color:var(--saguaro);color:var(--saguaro-d);background:var(--saguaro-tint)}
+.qbtn.no:hover{border-color:var(--brick);color:var(--brick);background:var(--brick-tint)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.check-line{display:flex;align-items:center;gap:9px;padding:7px 4px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--line-soft)}
+.check-line:last-child{border-bottom:none}
+.check-line input{accent-color:var(--saguaro-d);width:16px;height:16px}
+.check-line .cls{font-family:var(--mono);font-size:9.5px;color:var(--faint);margin-left:auto}
+.roster-list{max-height:230px;overflow-y:auto;border:1px solid var(--line);border-radius:9px;padding:4px 10px;background:var(--panel-2);margin-top:6px}
+.export-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.exp-btn{border:1px solid var(--line);background:var(--panel-2);border-radius:11px;padding:13px 12px;cursor:pointer;text-align:left;transition:all .13s}
+.exp-btn:hover{border-color:var(--saguaro);background:var(--saguaro-tint)}
+.exp-btn .t{font-weight:700;font-size:12.5px;color:var(--saguaro-d)}
+.exp-btn .s{font-family:var(--mono);font-size:8.5px;color:var(--faint);margin-top:4px;line-height:1.7;letter-spacing:.04em}
+pre.csvprev{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;font-family:var(--mono);
+  font-size:10px;line-height:1.8;color:var(--muted);padding:11px;overflow-x:auto;margin-top:10px;white-space:pre}
+pre.csvprev .hl{color:var(--saguaro-d);font-weight:600}
+table.roster-tbl{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+.roster-tbl th{font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--faint);text-align:left;padding:8px;border-bottom:1px solid var(--line);text-transform:uppercase}
+.roster-tbl td{padding:8px;border-bottom:1px solid var(--line-soft)}
+.roster-tbl tr:nth-child(even) td{background:rgba(58,146,104,.028)}
+.roster-tbl .pgy{font-family:var(--mono);color:var(--sky);font-size:10.5px;font-weight:700}
+.roster-tbl .st-ok{color:var(--saguaro-d);font-family:var(--mono);font-size:10.5px}
+.roster-tbl .st-q{color:var(--sky);font-family:var(--mono);font-size:10.5px}
+.roster-tbl .st-m{color:var(--adobe);font-family:var(--mono);font-size:10.5px}
+.dl-link{display:inline-block;margin-top:11px;font-family:var(--mono);font-size:12px;color:var(--saguaro-d);
+  text-decoration:none;border-bottom:1px solid #CBE0D2;padding-bottom:1px}
+.dl-link:hover{border-color:var(--saguaro-d)}
+
+/* ============ Q-CREDIT ============ */
+.dropzone{border:1.5px dashed var(--line);border-radius:10px;padding:24px 14px;text-align:center;cursor:pointer;
+  transition:all .13s;margin:12px 0;background:var(--panel-2)}
+.dropzone:hover{border-color:var(--saguaro)}
+.dropzone .dz-t{font-size:13px;font-weight:600;color:var(--dusk)}
+.dropzone .dz-s{font-family:var(--mono);font-size:9px;color:var(--faint);margin-top:5px;letter-spacing:.05em}
+.dropzone.has{border-color:var(--saguaro);border-style:solid;background:var(--saguaro-tint)}
+.file-chip{display:flex;align-items:center;gap:9px;background:var(--saguaro-tint);border:1px solid #CBE0D2;
+  border-radius:9px;padding:10px 12px;margin:10px 0;font-family:var(--mono);font-size:11.5px;color:var(--saguaro-d)}
+.attest{display:flex;gap:11px;align-items:flex-start;margin:14px 0;font-size:12px;color:var(--muted);line-height:1.55;cursor:pointer}
+.attest input{accent-color:var(--saguaro-d);width:18px;height:18px;margin-top:1px;flex-shrink:0}
+.reply-prev{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:13px;font-size:12.5px;color:var(--muted);line-height:1.65;margin-top:12px}
+.reply-prev .fr{font-family:var(--mono);font-size:9px;color:var(--faint);border-bottom:1px solid var(--line);padding-bottom:7px;margin-bottom:9px;letter-spacing:.06em}
+.verify-box{display:flex;align-items:center;gap:12px;background:var(--sky-tint);border:1px solid #C9D9E6;border-radius:10px;padding:13px;margin:12px 0}
+.spinner{width:22px;height:22px;border:3px solid #C9D9E6;border-top-color:var(--sky);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.verify-box .vt{font-size:12.5px;color:var(--sky);font-weight:600;line-height:1.5}
+.ai-result{border-radius:10px;padding:13px;margin:12px 0;font-size:12.5px;line-height:1.6}
+.ai-result.pass{background:var(--saguaro-tint);border:1px solid #CBE0D2;color:var(--saguaro-d)}
+.ai-result.review{background:var(--adobe-tint);border:1px solid #E8CBB1;color:var(--adobe)}
+.ai-result .rt{font-weight:700;margin-bottom:3px}
+.ai-result .rd{font-family:var(--mono);font-size:10px;opacity:.85}
+#toast{
+  position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translate(-50%,16px);
+  background:var(--dusk);color:#fff;font-size:13px;font-weight:600;line-height:1.45;
+  padding:12px 18px;border-radius:11px;box-shadow:0 8px 26px rgba(28,37,48,.3);
+  max-width:min(88vw,440px);opacity:0;pointer-events:none;transition:all .22s ease;z-index:90;text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast.err{background:var(--brick)}
+@media(prefers-reduced-motion:reduce){#toast{transition:opacity .22s}}
+::selection{background:rgba(58,146,104,.22)}
+footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mono);font-size:8.5px;color:var(--faint);letter-spacing:.09em;line-height:2}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hd-top">
+    <svg class="hd-mark" viewBox="0 0 34 40" aria-hidden="true">
+      <defs><linearGradient id="sag" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#3a9268"/><stop offset="1" stop-color="#2a6f50"/>
+      </linearGradient></defs>
+      <path fill="url(#sag)" d="
+        M13.4,38 L13.4,10.2 C13.4,6.4 14.9,4.2 17,4.2 C19.1,4.2 20.6,6.4 20.6,10.2 L20.6,38 Z
+        M13.4,24.5 C9.2,24 6.8,21.6 6.8,17.6 L6.8,13.2 C6.8,11.2 7.6,10 8.9,10 C10.2,10 11,11.2 11,13.2 L11,16.8 C11,19 11.9,20.2 13.4,20.6 Z
+        M20.6,20.5 C24.8,20 27.2,17.6 27.2,13.6 L27.2,10.2 C27.2,8.2 26.4,7 25.1,7 C23.8,7 23,8.2 23,10.2 L23,12.8 C23,15 22.1,16.2 20.6,16.6 Z"/>
+    </svg>
+    <div>
+      <div class="hd-title">Conference Tracker</div>
+      <div class="hd-sub">University of Arizona–Tucson · Internal Medicine</div>
+    </div>
+    <div class="hd-clock">
+      <div class="t" id="clock">--:--:--</div>
+      <div class="d" id="cdate">—</div>
+    </div>
+  </div>
+  <svg class="ridge" viewBox="0 0 540 18" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0,18 L0,11 L62,6 L124,12 L187,4 L260,10 L332,3 L405,9 L478,5 L540,10 L540,18 Z" fill="#EAF2EB"/>
+    <g stroke="#3A9268" stroke-width="1.3" stroke-linecap="round" fill="none" opacity=".5">
+      <path d="M96,16 v-7 M96,12.5 c0-1.6-2.4-1.3-2.4-3.2 M93.6,7.8 v2 c0,1.1 1.1,1.4 2.4,1.1"/>
+      <path d="M278,16 v-9 M278,10.5 c0-1.6 2.4-1.3 2.4-3.2 M280.4,5.8 v2 c0,1.1-1.1,1.4-2.4,1.1"/>
+      <path d="M448,16 v-6.5 M448,13 c0-1.4 2-1.1 2-2.8 M450,9.4 v1.8 c0,1-1,1.3-2,1"/>
+    </g>
+  </svg>
+</header>
+
+<div class="wrap" id="wrap">
+
+<!-- ==================== RESIDENT ==================== -->
+<section class="view on" id="v-resident">
+
+  <div class="card" id="r-step1">
+    <div class="eyebrow">Step 1 of 2 · Identify</div>
+    <h2>Conference check-in</h2>
+    <p class="sub">Enter your program email. It's matched against the residency roster — no account or password needed.</p>
+    <div style="margin-top:13px">
+      <input type="email" id="r-email" placeholder="you@arizona.edu" autocomplete="email" inputmode="email">
+    </div>
+    <div class="msg err" id="r-email-err">No roster match for that email. Check the spelling, or contact a chief resident.</div>
+    <div style="margin-top:12px">
+      <button class="btn btn-primary" onclick="residentLookup()">Continue</button>
+    </div>
+  </div>
+
+  <div class="card hide" id="r-step2">
+    <div class="eyebrow">Step 2 of 2 · Verify presence</div>
+    <div class="roster-hit">
+      <div class="avatar" id="r-avatar">?</div>
+      <div>
+        <div class="nm" id="r-name">—</div>
+        <div class="cls" id="r-class">—</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="residentReset()">Not you?</button>
+    </div>
+
+    <label class="fld">Now in session</label>
+    <div class="conf-banner">
+      <div class="live-dot"></div>
+      <div>
+        <div class="conf-name" id="r-conf-name">—</div>
+        <div class="conf-meta" id="r-conf-meta">—</div>
+      </div>
+    </div>
+
+    <p class="sub" style="text-align:center">Enter the code displayed at the front of the room.<br>It rotates every 30 seconds.</p>
+
+    <div class="code-boxes">
+      <input class="code-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" aria-label="Code digit 1">
+      <input class="code-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" aria-label="Code digit 2">
+      <input class="code-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" aria-label="Code digit 3">
+      <input class="code-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" aria-label="Code digit 4">
+    </div>
+
+    <div class="msg err" id="r-code-err">That code is incorrect or has expired. Check the current code on the room screen and try again.</div>
+    <div class="msg warn" id="r-dupe-warn">You're already checked in for this conference. One credit is recorded per session.</div>
+
+    <div class="signal-row">
+      <span class="chip" id="sig-gps">GPS · checking…</span>
+      <span class="chip info" id="sig-dev">Device · linked to your check-ins</span>
+    </div>
+
+    <button class="btn btn-primary" style="margin-top:12px" onclick="residentSubmit()">Check in</button>
+    <div class="divider"></div>
+    <button class="btn btn-ghost" onclick="showQArea()">No conference? Submit practice question credit</button>
+  </div>
+
+  <div class="card hide" id="r-step3">
+    <div class="success-head">
+      <svg class="checkring" viewBox="0 0 74 74">
+        <circle class="c" cx="37" cy="37" r="34"/>
+        <path class="k" d="M23 38 l10 10 l19 -20"/>
+      </svg>
+      <div class="big-status">Attendance recorded</div>
+    </div>
+    <p class="sub" style="text-align:center;margin-top:7px" id="r-success-line">—</p>
+    <div class="signal-row" style="justify-content:center;margin-top:13px">
+      <span class="chip ok" id="r-success-chip">CREDIT 1.0</span>
+    </div>
+    <div style="text-align:center;margin-top:16px">
+      <div style="font-size:42px;line-height:1">&#128522;</div>
+      <p class="sub" style="margin-top:8px;font-weight:600;color:var(--saguaro-d)">Hope you learned something — keep fighting the good fight!</p>
+    </div>
+    <div style="margin-top:15px">
+      <button class="btn btn-ghost" onclick="residentReset()">Done</button>
+    </div>
+  </div>
+
+  <div class="hide" id="q-area">
+
+  <div class="card" id="q-form">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <button class="btn btn-ghost btn-sm" onclick="hideQArea()">&larr; Back</button>
+      <div class="eyebrow" style="margin:0">Alternate credit</div>
+    </div>
+    <h2>Practice question credit</h2>
+    <p class="sub">Ten board-style questions from any question bank equal one conference credit. Available only for conferences designated Q-credit eligible — your credit posts to that specific listing. Submissions are due by <strong>midnight</strong> and count toward the listed day.</p>
+
+    <label class="fld">Apply credit to</label>
+    <select id="q-conf"></select>
+
+    <label class="fld">Your email</label>
+    <input type="email" id="q-email" placeholder="you@arizona.edu" inputmode="email">
+
+    <div class="dropzone" id="q-drop" onclick="document.getElementById('q-fileinput').click()">
+      <div class="dz-t">Add completion screenshot</div>
+      <div class="dz-s">PNG · JPG — VERIFIED AUTOMATICALLY, FILED TO DRIVE BY RESIDENT AND DATE</div>
+    </div>
+    <input type="file" id="q-fileinput" accept="image/png,image/jpeg,image/webp" hidden onchange="qFilePicked(this)">
+    <div class="file-chip hide" id="q-file"><span id="q-fname">—</span><span style="margin-left:auto" id="q-fsize">—</span></div>
+
+    <label class="attest">
+      <input type="checkbox" id="q-attest">
+      <span>I completed 10 board-style questions for this credit. I understand falsifying completion records is a professionalism concern.</span>
+    </label>
+
+    <button class="btn btn-primary" onclick="qSubmit()">Submit</button>
+    <div class="msg err" id="q-err">Please select a conference, enter your email, attach a screenshot, and confirm the attestation.</div>
+
+    <div class="verify-box hide" id="q-verifying">
+      <div class="spinner"></div>
+      <div class="vt">Reviewing your screenshot for clear proof of 10 completed questions…</div>
+    </div>
+  </div>
+
+  <div class="card hide" id="q-done">
+    <div class="success-head">
+      <svg class="checkring" viewBox="0 0 74 74">
+        <circle class="c" cx="37" cy="37" r="34"/>
+        <path class="k" d="M23 38 l10 10 l19 -20"/>
+      </svg>
+      <div class="big-status" id="q-done-title">—</div>
+    </div>
+    <div class="ai-result" id="q-ai-result"><div class="rt" id="q-ai-rt">—</div><div class="rd" id="q-ai-rd">—</div></div>
+    <div class="reply-prev">
+      <div class="fr">AUTO-REPLY · FROM uaztucsonchiefs@gmail.com</div>
+      <div id="q-reply-body">—</div>
+    </div>
+    <div style="text-align:center;margin-top:16px">
+      <div style="font-size:42px;line-height:1">&#128522;</div>
+      <p class="sub" style="margin-top:8px;font-weight:600;color:var(--saguaro-d)">Hope you learned something — keep fighting the good fight!</p>
+    </div>
+    <div style="margin-top:13px">
+      <button class="btn btn-ghost" onclick="qReset()">Submit another</button>
+      <button class="btn btn-ghost" style="margin-top:8px" onclick="hideQArea()">Back to check-in</button>
+    </div>
+  </div>
+
+  </div>
+
+
+</section>
+
+<!-- ==================== CHIEFS SIGN-IN ==================== -->
+<section class="view" id="v-login">
+  <div class="card" style="max-width:400px;margin-left:auto;margin-right:auto">
+    <div style="display:flex;justify-content:center;margin:4px 0 14px">
+      <svg width="40" height="47" viewBox="0 0 34 40" aria-hidden="true">
+        <defs><linearGradient id="sagl" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3a9268"/><stop offset="1" stop-color="#2a6f50"/>
+        </linearGradient></defs>
+        <path fill="url(#sagl)" d="M13.4,38 L13.4,10.2 C13.4,6.4 14.9,4.2 17,4.2 C19.1,4.2 20.6,6.4 20.6,10.2 L20.6,38 Z
+          M13.4,24.5 C9.2,24 6.8,21.6 6.8,17.6 L6.8,13.2 C6.8,11.2 7.6,10 8.9,10 C10.2,10 11,11.2 11,13.2 L11,16.8 C11,19 11.9,20.2 13.4,20.6 Z
+          M20.6,20.5 C24.8,20 27.2,17.6 27.2,13.6 L27.2,10.2 C27.2,8.2 26.4,7 25.1,7 C23.8,7 23,8.2 23,10.2 L23,12.8 C23,15 22.1,16.2 20.6,16.6 Z"/>
+      </svg>
+    </div>
+    <div class="eyebrow" style="justify-content:center">Chiefs · Program staff</div>
+    <h2 style="text-align:center">Sign in</h2>
+    <p class="sub" style="text-align:center">The Presenter and Admin areas are restricted. Residents never need an account — check-in stays open to everyone.</p>
+    <label class="fld">Email</label>
+    <input type="email" id="lg-email" placeholder="uaztucsonchiefs@gmail.com" autocomplete="username">
+    <label class="fld">Password</label>
+    <input type="password" id="lg-pass" placeholder="••••••••" autocomplete="current-password">
+    <div class="msg err" id="lg-err">Incorrect email or password.</div>
+    <div style="margin-top:13px">
+      <button class="btn btn-primary" onclick="doLogin()">Sign in</button>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== PRESENTER ==================== -->
+<section class="view" id="v-presenter">
+  <div class="card" id="p-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div class="eyebrow" style="margin:0">Room display · project this screen</div>
+      <button class="mini-btn" onclick="pFullscreen()">⤢ Fullscreen</button>
+    </div>
+    <p class="sub" style="margin-bottom:10px"><strong>1.</strong> Tap your session &nbsp;·&nbsp; <strong>2.</strong> Project this screen. The code rotates by itself — nothing else to do.</p>
+    <div id="p-today"></div>
+    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('p-all').classList.toggle('hide')">Other dates…</button>
+    <div class="hide" id="p-all" style="margin-top:8px">
+      <label class="fld">All conferences</label>
+      <select id="p-select" onchange="presenterPick()"></select>
+    </div>
+    <h2 style="text-align:center;margin-top:14px" id="p-title">—</h2>
+    <p class="pres-meta" id="p-meta">—</p>
+
+    <div class="pcode-row" id="p-code"><div class="pdigit">·</div><div class="pdigit">·</div><div class="pdigit">·</div><div class="pdigit">·</div></div>
+
+    <div class="ring-wrap">
+      <svg class="ring" width="74" height="74" viewBox="0 0 74 74">
+        <circle class="bgc" cx="37" cy="37" r="31"/>
+        <circle class="fgc" id="p-ring" cx="37" cy="37" r="31" stroke-dasharray="194.8" stroke-dashoffset="0"/>
+        <text class="ring-label" id="p-secs" x="37" y="37">30</text>
+      </svg>
+    </div>
+
+    <div class="qr-holder"><div id="qrbox"></div></div>
+    <p class="pres-meta">SCAN TO OPEN CHECK-IN · QR CARRIES THE LIVE CODE<br>CODE ROTATES EVERY 30 SECONDS · UNIQUE PER CONFERENCE</p>
+  </div>
+
+  <div class="card">
+    <div class="eyebrow">Check-ins this session <span style="color:var(--saguaro-d)" id="p-count"></span></div>
+    <ul class="feed" id="p-feed"></ul>
+  </div>
+</section>
+
+<!-- ==================== ADMIN ==================== -->
+<section class="view" id="v-admin">
+  <div class="card" style="display:flex;align-items:center;gap:10px;padding:12px 14px;margin-bottom:13px">
+    <span class="chip ok">SIGNED IN</span>
+    <span class="mono" style="font-size:11px;color:var(--muted)">uaztucsonchiefs@gmail.com</span>
+    <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="doLogout()">Sign out</button>
+  </div>
+  <div class="stat-row">
+    <div class="stat"><div class="n" id="a-present">0</div><div class="l">Present</div></div>
+    <div class="stat sky"><div class="n" id="a-qcredit">0</div><div class="l">Q-Credits</div></div>
+    <div class="stat adobe"><div class="n" id="a-flagged">0</div><div class="l">Flagged</div></div>
+    <div class="stat"><div class="n" id="a-confs">0</div><div class="l">This Week</div></div>
+  </div>
+
+  <div class="card">
+    <div class="eyebrow">This week's schedule</div>
+    <p class="sub" style="margin-bottom:10px">Each listing carries its own code, QR, and attendance log, and maps 1-to-1 to an NI conference entry.</p>
+    <div id="a-week"></div>
+  </div>
+
+  <div class="card">
+    <div class="eyebrow">Add a conference</div>
+    <div class="grid-2">
+      <div>
+        <label class="fld">Type</label>
+        <select id="add-type">
+          <option>Noon Conference</option>
+          <option>Goldman Rounds</option>
+          <option>Sim Session</option>
+          <option>Grand Rounds</option>
+          <option>AHD</option>
+          <option>Bonus / Special Event</option>
+        </select>
+      </div>
+      <div>
+        <label class="fld">Date</label>
+        <input type="date" id="add-date" value="2026-07-08">
+      </div>
+    </div>
+    <label class="fld">Site</label>
+    <select id="add-site"><option>BUMCT</option><option>South</option><option>VA</option><option value="">—</option></select>
+    <label class="fld">Title</label>
+    <input type="text" id="add-title" placeholder="e.g., Evening Journal Club — PE Risk Stratification">
+    <div class="grid-2">
+      <div>
+        <label class="fld">Credit value</label>
+        <input type="number" id="add-credit" value="1" min="0.5" step="0.5">
+      </div>
+      <div>
+        <label class="fld">&nbsp;</label>
+        <label class="tgl" style="padding-top:9px"><input type="checkbox" id="add-qelig"> Q-credit eligible</label>
+      </div>
+    </div>
+    <div style="margin-top:13px">
+      <button class="btn btn-primary" onclick="addConference()">Add conference · generates code + QR</button>
+    </div>
+    <div class="msg ok" id="add-ok">Conference added. Its rotating code and QR are live on the Presenter tab.</div>
+  </div>
+
+  <div class="card">
+    <div class="eyebrow">Generate the year · weekly template</div>
+    <p class="sub">Stamps the standing week across a date range: Mon Noon Conference (BUMCT · VA · South), Tue Goldman Rounds (BUMCT) · Noon Conference (South) · Sim Session (VA), Wed Grand Rounds, Thu AHD Hours 1–3, Fri Noon Conference (BUMCT · South · VA). Grand Rounds generates as <em>cancelled + Q-credit eligible</em> through Sept 1 per the current hiatus — edit <span class="mono" style="color:var(--sky)">WEEKLY_TEMPLATE</span> / <span class="mono" style="color:var(--sky)">HIATUS</span> in Code.gs when the week changes. Safe to re-run; existing listings are skipped.</p>
+    <div class="grid-2">
+      <div><label class="fld">Start</label><input type="date" id="gen-start" value="2026-07-06"></div>
+      <div><label class="fld">End</label><input type="date" id="gen-end" value="2027-06-25"></div>
+    </div>
+    <div style="margin-top:12px"><button class="btn btn-primary" onclick="genSchedule()">Generate schedule</button></div>
+    <div class="msg ok" id="gen-ok">—</div>
+  </div>
+
+  <div class="card">
+    <div class="eyebrow">Import schedule · paste from Google Doc</div>
+    <p class="sub">Paste one conference per line as <span class="mono">date, type, title</span> — commas or tabs both work. Add <span class="mono">, Q</span> at the end to mark a listing Q-credit eligible.</p>
+    <textarea id="imp-text" rows="5" placeholder="7/14/2026, Noon Conference, Hypertension Update&#10;7/16/2026, AHD Hour 1, EKG Bootcamp&#10;7/17/2026, Noon Conference, No conference — holiday, Q"></textarea>
+    <div style="margin-top:10px">
+      <button class="btn btn-primary" onclick="importParse()">Preview import</button>
+    </div>
+    <div id="imp-out"></div>
+  </div>
+
+  <div class="card">
+    <div class="eyebrow">Bulk credit award</div>
+    <p class="sub">Award credit directly — for bonus events, speaker panels, or attendance collected on paper.</p>
+    <label class="fld">Conference</label>
+    <select id="bulk-conf"></select>
+    <label class="fld">Paste recipients (optional)</label>
+    <textarea id="bulk-paste" rows="3" placeholder="One per line — email, Last, First — or First Last"></textarea>
+    <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="bulkMatch()">Match pasted list</button>
+    <div class="msg warn" id="bulk-unmatched"></div>
+    <label class="fld">Residents</label>
+    <div class="roster-list" id="bulk-roster"></div>
+    <label class="fld">Action</label>
+    <select id="bulk-action">
+      <option value="Manual Credit">Award credit</option>
+      <option value="Excused">Mark excused (nights, vacation, away)</option>
+    </select>
+    <div style="margin-top:12px">
+      <button class="btn btn-primary" onclick="bulkAward()">Apply to selected (<span id="bulk-n">0</span>)</button>
+    </div>
+    <div class="msg ok" id="bulk-ok">—</div>
+  </div>
+
+  <div class="card">
+    <div class="eyebrow" style="color:var(--adobe)">Review queue</div>
+    <div id="a-flags"></div>
+    <p class="sub hide" id="a-noflags" style="text-align:center;padding:6px 0">No entries awaiting review.</p>
+  </div>
+
+  <div class="card">
+    <div class="eyebrow">Credit totals · House Cup tally</div>
+    <p class="sub">One point per conference attended — each AHD hour counts as its own conference. Quarterly totals feed the House Cup.</p>
+    <div id="tally-out"></div>
+    <div class="export-grid">
+      <button class="exp-btn" onclick="tallyDownload()">
+        <div class="t">Export totals CSV</div>
+        <div class="s">PER RESIDENT · CLASS · HOUSE<br>ONE POINT PER CONFERENCE</div>
+      </button>
+      <button class="exp-btn" onclick="pointomaticPreview()">
+        <div class="t">Sync to Point-o-matic</div>
+        <div class="s">WEEKLY HOUSE TOTALS PUSH<br>MON 06:00 · SHARED CHIEFS ACCOUNT</div>
+      </button>
+    </div>
+    <div id="pom-out"></div>
+  </div>
+
+  <div class="card">
+    <div class="eyebrow">Morning report · automated</div>
+    <p class="sub">Runs server-side at <span class="mono" style="color:var(--sky)">06:00</span>, covering the previous day — Q-credit submissions received through the grace period are included. Weekends are skipped; Monday's report covers Friday through Sunday. Nothing is sent on days with no recorded credits. Recipient and send hour are set in <span class="mono" style="color:var(--sky)">Code.gs → CONFIG</span>.</p>
+    <div class="signal-row" style="margin-top:10px">
+      <span class="chip ok">TRIGGER · DAILY 06:00</span>
+      <span class="chip info">MON COVERS FRI–SUN</span>
+      <span class="chip">NI CSV + STAFF ROSTERS</span>
+    </div>
+    <button class="btn btn-ghost" style="margin-top:12px" onclick="nightlyPreview()">How do I send one manually?</button>
+    <div id="ne-out"></div>
+  </div>
+
+  <div class="card">
+    <div class="eyebrow">Exports</div>
+    <label class="fld">Conference</label>
+    <select id="exp-conf"></select>
+    <div class="export-grid">
+      <button class="exp-btn" onclick="showExport('staff')">
+        <div class="t">Staff Roster</div>
+        <div class="s">ALPHABETIZED BY CLASS<br>XLSX / MANUAL NI ENTRY</div>
+      </button>
+      <button class="exp-btn" onclick="showExport('ni')">
+        <div class="t">NI Data Exchange</div>
+        <div class="s">CONFIG-DRIVEN CSV<br>SFTP NIGHTLY BATCH</div>
+      </button>
+    </div>
+    <div id="a-export-out"></div>
+  </div>
+</section>
+
+
+
+</div><!-- /wrap -->
+
+<footer>
+  CONFERENCE TRACKER v1.0 · UA-TUCSON INTERNAL MEDICINE<br>
+  QUESTIONS OR ISSUES: NATE WALTON · <a href="mailto:nathantwalton@gmail.com" style="color:#2A6F50;text-decoration:none">nathantwalton@gmail.com</a>
+</footer>
+
+<nav>
+  <div class="tabs" id="tabs"></div>
+</nav>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ============ SERVER BRIDGE (dual-mode) ============
+   Served by Apps Script  -> uses google.script.run (API_URL ignored).
+   Hosted on Vercel       -> fetches the Apps Script /exec URL as a JSON API.
+   Set API_URL to your deployed /exec URL for Vercel hosting. */
+var API_URL = "https://script.google.com/macros/s/AKfycbwY-NhhpcE-j-5mR-hwIvJkgc6h2paFvDFGQ5h_alE-zrusIUod3THDB-WBg47jh2KW/exec";
+function call(fn){
+  var args = Array.prototype.slice.call(arguments, 1);
+  if (typeof google !== "undefined" && google.script && google.script.run){
+    return new Promise(function(ok, bad){
+      var runner = google.script.run
+        .withSuccessHandler(ok)
+        .withFailureHandler(function(e){ bad(new Error(e && e.message ? e.message : 'Server error')); });
+      runner[fn].apply(runner, args);
+    });
+  }
+  return fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" }, // simple request: no CORS preflight
+    body: JSON.stringify({ action: fn, args: args })
+  }).then(function(r){
+    if (!r.ok) throw new Error("Network error (" + r.status + ")");
+    return r.json();
+  }).then(function(env){
+    if (!env.apiOk) throw new Error(env.error || "Server error");
+    return env.data;
+  });
+}
+var _toastT = null;
+function toast(msg, isErr){
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "show" + (isErr === false ? "" : " err");
+  clearTimeout(_toastT);
+  _toastT = setTimeout(function(){ t.className = ""; }, 3800);
+}
+function notify(msg){ toast(msg, false); }
+
+/* ============ STATE ============ */
+var BOOT = null;              /* bootstrap payload */
+var currentResident = null;   /* {first,last,pgy,email} */
+var TOKEN = sessionStorage.getItem('trk_token') || null;
+var presenterConf = null;
+var presenterTimer = null;
+var ADMIN_DATA = null;
+var qImage = null;
+var _IMP = [];
+
+function deviceId(){
+  var d = localStorage.getItem('trk_device');
+  if (!d){ d = 'dev-' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('trk_device', d); }
+  return d;
+}
+
+/* ============ CLOCK ============ */
+function tickClock(){
+  var n = new Date();
+  document.getElementById("clock").textContent = n.toTimeString().slice(0,8);
+  document.getElementById("cdate").textContent = n.toDateString().toUpperCase();
+}
+setInterval(tickClock, 1000); tickClock();
+
+/* ============ NAV + AUTH ============ */
+var ADMIN = !!TOKEN;
+function renderTabs(active){
+  var t = document.getElementById("tabs");
+  var defs = ADMIN
+    ? [["resident","Check-In"],["presenter","Presenter"],["admin","Admin"]]
+    : [["resident","Check-In"],["login","Chiefs"]];
+  t.style.gridTemplateColumns = "repeat(" + defs.length + ",1fr)";
+  t.innerHTML = "";
+  defs.forEach(function(d){
+    var b = document.createElement("button");
+    b.className = "tab" + (d[0]===active ? " on" : "");
+    b.dataset.v = d[0]; b.textContent = d[1];
+    b.onclick = function(){ go(b); };
+    t.appendChild(b);
+  });
+}
+function go(btn){
+  var v = btn.dataset.v;
+  if ((v==="admin" || v==="presenter") && !ADMIN) v = "login";
+  renderTabs(v);
+  document.querySelectorAll(".view").forEach(function(x){ x.classList.remove("on"); });
+  document.getElementById("v-"+v).classList.add("on");
+  document.getElementById("wrap").classList.toggle("admin-wide", v==="admin");
+  if (v==="admin") loadAdmin();
+  if (v==="presenter") renderTodayButtons();
+  if (v!=="presenter") stopPresenterPolling();
+  window.scrollTo({top:0});
+}
+async function doLogin(){
+  var em = document.getElementById("lg-email").value.trim().toLowerCase();
+  var pw = document.getElementById("lg-pass").value;
+  try{
+    var r = await call('adminLogin', em, pw);
+    if (r.ok){
+      TOKEN = r.token; sessionStorage.setItem('trk_token', TOKEN);
+      ADMIN = true;
+      document.getElementById("lg-err").style.display = "none";
+      document.getElementById("lg-pass").value = "";
+      go({dataset:{v:"admin"}});
+    } else {
+      document.getElementById("lg-err").style.display = "block";
+    }
+  }catch(e){ document.getElementById("lg-err").style.display = "block"; }
+}
+function doLogout(){
+  TOKEN = null; ADMIN = false; sessionStorage.removeItem('trk_token');
+  stopPresenterPolling();
+  go({dataset:{v:"resident"}});
+}
+document.addEventListener("keydown", function(e){
+  if (e.key==="Enter" && document.getElementById("v-login").classList.contains("on")) doLogin();
+});
+
+/* ============ BOOTSTRAP ============ */
+async function boot(){
+  renderTabs("resident");
+  try{ BOOT = await call('bootstrap'); }
+  catch(e){ BOOT = {todayConfs:[], liveConf:null, qEligible:[], webAppUrl:''}; }
+  qOptions();
+}
+
+/* ============ RESIDENT FLOW ============ */
+async function residentLookup(){
+  var em = document.getElementById("r-email").value.trim().toLowerCase();
+  var err = document.getElementById("r-email-err");
+  if (!em || em.indexOf("@")<1){ err.style.display="block"; return; }
+  var hit;
+  try{ hit = await call('lookupResident', em); }
+  catch(e){ err.textContent = e.message; err.style.display="block"; return; }
+  if (!hit.found){ err.style.display="block"; return; }
+  err.style.display="none";
+  currentResident = {first:hit.first, last:hit.last, pgy:hit.pgy, email:em};
+  try{ BOOT = await call('bootstrap'); }catch(e){}
+  var lc = BOOT.liveConf;
+  document.getElementById("r-avatar").textContent = hit.first[0]+hit.last[0];
+  document.getElementById("r-name").textContent = hit.first+" "+hit.last;
+  document.getElementById("r-class").textContent = "PGY-"+hit.pgy+" · ROSTER MATCH";
+  if (lc){
+    document.getElementById("r-conf-name").textContent = lc.type + (lc.title!==lc.type ? " — " + lc.title : "") + (lc.site ? " · " + lc.site : "");
+    document.getElementById("r-conf-meta").textContent = lc.date + " · " + lc.time + " · CHECK-IN OPEN";
+  } else {
+    document.getElementById("r-conf-name").textContent = "No conference is open for check-in right now";
+    document.getElementById("r-conf-meta").textContent = "Q-CREDIT SUBMISSION IS STILL AVAILABLE BELOW";
+  }
+  document.getElementById("r-step1").classList.add("hide");
+  document.getElementById("r-step2").classList.remove("hide");
+  requestGps();
+  var fb = document.querySelector(".code-box"); if (fb) fb.focus();
+}
+var GPS = {lat:null, lng:null};
+function requestGps(){
+  var chip = document.getElementById("sig-gps");
+  if (!navigator.geolocation){ chip.textContent = "GPS · unavailable"; return; }
+  navigator.geolocation.getCurrentPosition(function(pos){
+    GPS.lat = pos.coords.latitude; GPS.lng = pos.coords.longitude;
+    chip.className = "chip ok"; chip.textContent = "GPS · location captured";
+  }, function(){
+    chip.className = "chip"; chip.textContent = "GPS · not shared";
+  }, {timeout:4000, maximumAge:60000});
+}
+var boxes = document.querySelectorAll(".code-box");
+boxes.forEach(function(b,i){
+  b.addEventListener("input", function(){
+    b.value = b.value.replace(/\D/g,"");
+    if (b.value && i < boxes.length-1) boxes[i+1].focus();
+  });
+  b.addEventListener("keydown", function(e){
+    if (e.key==="Backspace" && !b.value && i>0) boxes[i-1].focus();
+  });
+});
+async function residentSubmit(){
+  if (!BOOT.liveConf){ 
+    var ce = document.getElementById("r-code-err");
+    ce.textContent = "No conference is open for check-in right now.";
+    ce.style.display="block"; return;
+  }
+  var entered = Array.prototype.map.call(boxes, function(b){return b.value;}).join("");
+  var codeErr = document.getElementById("r-code-err");
+  var dupeWarn = document.getElementById("r-dupe-warn");
+  codeErr.style.display="none"; dupeWarn.style.display="none";
+  var res;
+  try{
+    res = await call('checkIn', {
+      email: currentResident.email, confId: BOOT.liveConf.id, code: entered,
+      deviceId: deviceId(), lat: GPS.lat, lng: GPS.lng
+    });
+  }catch(e){ codeErr.textContent = e.message; codeErr.style.display="block"; return; }
+  if (!res.ok){
+    if (res.reason==="dupe"){ dupeWarn.style.display="block"; return; }
+    boxes.forEach(function(b){ b.classList.add("err"); });
+    setTimeout(function(){ boxes.forEach(function(b){ b.classList.remove("err"); }); }, 350);
+    codeErr.textContent = res.reason==="closed"
+      ? "Check-in for this conference has closed."
+      : "That code is incorrect or has expired. Check the current code on the room screen and try again.";
+    codeErr.style.display="block"; return;
+  }
+  document.getElementById("r-success-chip").textContent =
+    "CREDIT " + res.credit.toFixed(1) + " · " + currentResident.first.toUpperCase() + " " + currentResident.last.toUpperCase();
+  document.getElementById("r-success-line").textContent = res.flags.length
+    ? "You're checked in for " + res.title + ". One or more verification signals were flagged — a chief resident will review this entry."
+    : "You're checked in for " + res.title + ".";
+  document.getElementById("r-step2").classList.add("hide");
+  var s3 = document.getElementById("r-step3");
+  s3.classList.remove("hide");
+  s3.querySelectorAll(".c,.k").forEach(function(el){ el.style.animation="none"; void el.getBoundingClientRect(); el.style.animation=""; });
+}
+function residentReset(){
+  currentResident = null;
+  document.getElementById("r-email").value = "";
+  boxes.forEach(function(b){ b.value=""; });
+  document.getElementById("r-step2").classList.add("hide");
+  document.getElementById("r-step3").classList.add("hide");
+  document.getElementById("q-area").classList.add("hide");
+  document.getElementById("r-step1").classList.remove("hide");
+}
+function showQArea(){
+  qOptions();
+  if (currentResident) document.getElementById("q-email").value = currentResident.email;
+  document.getElementById("r-step2").classList.add("hide");
+  document.getElementById("r-step3").classList.add("hide");
+  document.getElementById("q-area").classList.remove("hide");
+  window.scrollTo({top:0});
+}
+function hideQArea(){
+  document.getElementById("q-area").classList.add("hide");
+  if (currentResident) document.getElementById("r-step2").classList.remove("hide");
+  else document.getElementById("r-step1").classList.remove("hide");
+  window.scrollTo({top:0});
+}
+
+/* ============ Q-CREDIT ============ */
+function qOptions(){
+  var sel = document.getElementById("q-conf");
+  sel.innerHTML = "";
+  var elig = (BOOT && BOOT.qEligible) || [];
+  if (!elig.length){
+    var o = document.createElement("option");
+    o.textContent = "No conferences are open for Q-credit today"; o.value = "";
+    sel.appendChild(o); return;
+  }
+  elig.forEach(function(c){
+    var o = document.createElement("option");
+    o.value = c.id;
+    o.textContent = c.date + " · " + c.type + (c.title!==c.type ? " — " + c.title : "") +
+      (c.site ? " (" + c.site + ")" : "") + (c.status==="Cancelled" ? " — no conference, Q-credit" : "");
+    sel.appendChild(o);
+  });
+}
+function qFilePicked(inp){
+  var f = inp.files[0];
+  if (!f) return;
+  if (f.size > 8*1024*1024){ toast("Please use an image under 8 MB."); inp.value=""; return; }
+  var rd = new FileReader();
+  rd.onload = function(){
+    qImage = {b64: rd.result.split(",")[1], mediaType: f.type || "image/png", name: f.name};
+    document.getElementById("q-drop").classList.add("has");
+    document.getElementById("q-file").classList.remove("hide");
+    document.getElementById("q-fname").textContent = f.name;
+    document.getElementById("q-fsize").textContent = (f.size/1024/1024).toFixed(1) + " MB ✓";
+  };
+  rd.readAsDataURL(f);
+}
+async function qSubmit(){
+  var confId = document.getElementById("q-conf").value;
+  var em = document.getElementById("q-email").value.trim().toLowerCase();
+  var ok = confId && em.indexOf("@")>0 && qImage && document.getElementById("q-attest").checked;
+  var err = document.getElementById("q-err");
+  if (!ok){ err.style.display="block"; return; }
+  err.style.display="none";
+  document.getElementById("q-verifying").classList.remove("hide");
+  var res;
+  try{
+    res = await call('qSubmit', {email:em, confId:confId, b64:qImage.b64,
+      mediaType:qImage.mediaType, deviceId:deviceId()});
+  }catch(e){
+    document.getElementById("q-verifying").classList.add("hide");
+    err.textContent = e.message; err.style.display="block"; return;
+  }
+  document.getElementById("q-verifying").classList.add("hide");
+  if (!res.ok){
+    err.textContent = res.reason==="deadline" ? "The submission deadline for that conference has passed (due by midnight)."
+      : res.reason==="dupe" ? "A credit for that conference is already recorded for you."
+      : res.reason==="roster" ? "No roster match for that email."
+      : "That conference is not eligible for Q-credit.";
+    err.style.display="block"; return;
+  }
+  var box = document.getElementById("q-ai-result");
+  var title = document.getElementById("q-done-title");
+  var reply = document.getElementById("q-reply-body");
+  if (res.verified){
+    title.textContent = "Verified — credit approved";
+    box.className = "ai-result pass";
+    document.getElementById("q-ai-rt").textContent = "Screenshot verified" + (res.questions ? " · " + res.questions + " questions identified" : "");
+    document.getElementById("q-ai-rd").textContent = res.reason || "Reviewed automatically";
+    reply.innerHTML = "Your practice-question submission was <strong>verified and approved</strong>. Credit has posted to <strong>" + res.title + "</strong>. A confirmation email is on its way.";
+  } else {
+    title.textContent = "Received — pending manual review";
+    box.className = "ai-result review";
+    document.getElementById("q-ai-rt").textContent = "Queued for chief review";
+    document.getElementById("q-ai-rd").textContent = res.reason || "A chief resident will review your screenshot.";
+    reply.innerHTML = "Your submission was received. If it shows 10 completed questions, credit will post to <strong>" + res.title + "</strong> and you'll receive a confirmation.";
+  }
+  document.getElementById("q-form").classList.add("hide");
+  var done = document.getElementById("q-done");
+  done.classList.remove("hide");
+  done.querySelectorAll(".c,.k").forEach(function(el){ el.style.animation="none"; void el.getBoundingClientRect(); el.style.animation=""; });
+}
+function qReset(){
+  document.getElementById("q-done").classList.add("hide");
+  document.getElementById("q-form").classList.remove("hide");
+  document.getElementById("q-drop").classList.remove("has");
+  document.getElementById("q-file").classList.add("hide");
+  document.getElementById("q-fileinput").value = "";
+  document.getElementById("q-attest").checked = false;
+  qImage = null;
+}
+
+/* ============ PRESENTER ============ */
+async function renderTodayButtons(){
+  try{ BOOT = await call('bootstrap'); }catch(e){}
+  var holder = document.getElementById("p-today");
+  holder.innerHTML = "";
+  var confs = (BOOT.todayConfs||[]).filter(function(c){ return c.time !== "—" && c.status !== "Cancelled"; });
+  if (!confs.length){
+    holder.innerHTML = '<p class="sub" style="padding:8px 0">Nothing scheduled today. Pick a session from "Other dates…" below.</p>';
+  }
+  confs.forEach(function(c){
+    var b = document.createElement("button");
+    b.className = "sess-btn" + (c.id===presenterConf ? " on" : "");
+    b.innerHTML = '<div class="st">' + c.type + (c.title!==c.type ? ' — ' + c.title : '') + (c.site ? ' · ' + c.site : '') + '</div><div class="sm">' + c.time + (c.live ? " · IN SESSION" : "") + '</div>';
+    b.onclick = function(){ pickSession(c.id); };
+    holder.appendChild(b);
+  });
+  fillAllSelect();
+}
+async function fillAllSelect(){
+  if (!ADMIN_DATA){ try{ ADMIN_DATA = await call('getAdminData', TOKEN); }catch(e){ return; } }
+  var sel = document.getElementById("p-select");
+  sel.innerHTML = "";
+  ADMIN_DATA.conferences.forEach(function(c){
+    var o = document.createElement("option");
+    o.value = c.id; o.textContent = c.date + " · " + c.type + " — " + c.title;
+    if (c.id===presenterConf) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+function presenterPick(){ pickSession(document.getElementById("p-select").value); }
+async function pickSession(id){
+  presenterConf = id;
+  try{ await call('openConference', TOKEN, id); }
+  catch(e){ toast(e.message); return; }
+  renderTodayButtons();
+  startPresenterPolling();
+}
+var lastCode = "", ringAnim = null;
+function pFullscreen(){
+  var el = document.getElementById("p-card");
+  if (document.fullscreenElement) document.exitFullscreen();
+  else if (el.requestFullscreen) el.requestFullscreen();
+}
+function startPresenterPolling(){
+  stopPresenterPolling();
+  pollPresenter();
+  presenterTimer = setInterval(pollPresenter, 5000);
+}
+function stopPresenterPolling(){
+  if (presenterTimer){ clearInterval(presenterTimer); presenterTimer = null; }
+  if (ringAnim){ clearInterval(ringAnim); ringAnim = null; }
+}
+async function pollPresenter(){
+  if (!presenterConf) return;
+  var st;
+  try{ st = await call('presenterState', TOKEN, presenterConf); }
+  catch(e){ stopPresenterPolling(); toast(e.message); return; }
+  var c = (ADMIN_DATA ? ADMIN_DATA.conferences : []).filter(function(x){ return x.id===presenterConf; })[0];
+  if (c){
+    document.getElementById("p-title").textContent = c.type + " — " + c.title;
+    document.getElementById("p-meta").textContent = c.date + " · " + c.time;
+  }
+  var holder = document.getElementById("p-code");
+  var changed = st.code !== lastCode;
+  st.code.split("").forEach(function(ch, i){
+    var d = holder.children[i];
+    if (d.textContent !== ch){ d.textContent = ch; if (changed){ d.classList.add("tick"); setTimeout(function(){ d.classList.remove("tick"); }, 220); } }
+  });
+  if (changed){
+    lastCode = st.code;
+    var box = document.getElementById("qrbox");
+    box.innerHTML = "";
+    if (window.QRCode && BOOT.webAppUrl){
+      new QRCode(box, {text: BOOT.webAppUrl, width:145, height:145,
+        colorDark:"#2A6F50", colorLight:"#ffffff", correctLevel:QRCode.CorrectLevel.M});
+    }
+  }
+  var end = Date.now() + st.msLeft;
+  if (ringAnim) clearInterval(ringAnim);
+  ringAnim = setInterval(function(){
+    var msLeft = Math.max(0, end - Date.now());
+    var C = 194.8;
+    document.getElementById("p-ring").style.strokeDashoffset = (C * (1 - msLeft/st.windowMs)).toFixed(1);
+    document.getElementById("p-secs").textContent = Math.ceil(msLeft/1000);
+  }, 200);
+  var ul = document.getElementById("p-feed");
+  ul.innerHTML = "";
+  st.recent.forEach(function(l){
+    var li = document.createElement("li");
+    li.innerHTML = '<span class="dot' + (l.flagged?' flag':'') + '"></span><span class="who">' + l.name + '</span><span class="cls">PGY-' + l.pgy + '</span><span class="tm">' + l.time + '</span>';
+    ul.appendChild(li);
+  });
+  document.getElementById("p-count").textContent = "· " + st.count + " recorded";
+}
+
+/* ============ ADMIN ============ */
+async function loadAdmin(){
+  if (!ADMIN_DATA){
+    document.getElementById("a-week").innerHTML =
+      '<p class="sub" style="text-align:center;padding:14px 0">Loading this year\'s schedule…</p>';
+  }
+  try{ ADMIN_DATA = await call('getAdminData', TOKEN); }
+  catch(e){ toast("Session expired — sign in again."); doLogout(); return; }
+  renderAdmin();
+}
+function renderAdmin(){
+  var D = ADMIN_DATA;
+  document.getElementById("a-present").textContent = D.stats.present;
+  document.getElementById("a-qcredit").textContent = D.stats.qcredit;
+  document.getElementById("a-confs").textContent = D.conferences.length;
+  document.getElementById("a-flagged").textContent = D.flags.length;
+
+  /* schedule grouped by date */
+  var wk = document.getElementById("a-week");
+  wk.innerHTML = "";
+  var byDay = {};
+  D.conferences.forEach(function(c){ (byDay[c.date]=byDay[c.date]||[]).push(c); });
+  Object.keys(byDay).sort().forEach(function(day){
+    var g = document.createElement("div"); g.className = "day-group";
+    g.innerHTML = '<div class="day-label">' + day + '</div>';
+    byDay[day].forEach(function(c){
+      var row = document.createElement("div");
+      var cancelled = c.status === "Cancelled";
+      row.className = "conf-row" + (c.live ? " live" : "");
+      if (cancelled) row.style.opacity = ".72";
+      row.innerHTML =
+        '<div class="ci"><div class="ct">' + c.type + (c.title!==c.type ? ' — ' + c.title : '') + '</div>' +
+        '<div class="cm">' + (c.site ? c.site + ' · ' : '') + c.time + ' · CREDIT ' + c.credit.toFixed(1) + ' · ' + c.id + '</div>' +
+        '<div class="badges">' + (c.live?'<span class="chip ok">IN SESSION</span>':'') +
+        (cancelled?'<span class="chip" style="border-color:#E4C0B8;color:var(--brick)">CANCELLED</span>':'') +
+        (c.qEligible?'<span class="chip info">Q-CREDIT ELIGIBLE</span>':'') +
+        (c.bonus?'<span class="chip warn">BONUS</span>':'') + '</div></div>' +
+        '<div class="att">' + c.count + '<small>CREDITS</small></div>';
+      var btns = document.createElement("div");
+      btns.style.cssText = "display:flex;flex-direction:column;gap:6px";
+      if (!cancelled){
+        var btn = document.createElement("button");
+        btn.className = "mini-btn"; btn.textContent = "Code / QR";
+        btn.onclick = function(){ presenterConf = c.id; go({dataset:{v:"presenter"}}); pickSession(c.id); };
+        btns.appendChild(btn);
+        var cx = document.createElement("button");
+        cx.className = "mini-btn"; cx.textContent = "Cancel → Q";
+        cx.onclick = function(){
+          if (confirm("Cancel " + c.type + (c.site?" ("+c.site+")":"") + " on " + c.date + " and open it for 10-question credit?"))
+            cancelUI(c.id, true);
+        };
+        btns.appendChild(cx);
+      } else {
+        var rs = document.createElement("button");
+        rs.className = "mini-btn"; rs.textContent = "Restore";
+        rs.onclick = function(){ restoreUI(c.id); };
+        btns.appendChild(rs);
+      }
+      row.appendChild(btns);
+      g.appendChild(row);
+    });
+    wk.appendChild(g);
+  });
+
+  /* bulk + export selectors */
+  ["bulk-conf","exp-conf"].forEach(function(id){
+    var sel = document.getElementById(id);
+    var keep = sel.value;
+    sel.innerHTML = "";
+    D.conferences.forEach(function(c){
+      var o = document.createElement("option");
+      o.value = c.id; o.textContent = c.date + " · " + c.type + " — " + c.title;
+      sel.appendChild(o);
+    });
+    if (keep) sel.value = keep;
+  });
+
+  /* roster checkboxes */
+  var br = document.getElementById("bulk-roster");
+  br.innerHTML = "";
+  D.roster.forEach(function(r){
+    var l = document.createElement("label");
+    l.className = "check-line";
+    l.innerHTML = '<input type="checkbox" value="' + r.email + '" onchange="bulkCount()"> ' + r.last + ', ' + r.first + ' <span class="cls">PGY-' + r.pgy + '</span>';
+    br.appendChild(l);
+  });
+
+  /* flags */
+  var holder = document.getElementById("a-flags");
+  holder.innerHTML = "";
+  document.getElementById("a-noflags").classList.toggle("hide", D.flags.length>0);
+  D.flags.forEach(function(f){
+    var d = document.createElement("div");
+    d.className = "flag-item";
+    d.innerHTML =
+      '<div class="fr"><span class="who">' + f.name + '</span><span class="chip warn" style="font-size:9px;padding:3px 8px">PGY-' + f.pgy + '</span>' +
+      '<span class="mono" style="margin-left:auto;font-size:9.5px;color:var(--faint)">' + f.confId + ' · ' + f.time + '</span></div>' +
+      '<div class="why">' + f.flags + '</div>';
+    var q = document.createElement("div"); q.className = "qbtns";
+    var a = document.createElement("button"); a.className="qbtn ok"; a.textContent="Approve credit";
+    a.onclick = function(){ resolveFlagUI(f.logId, true); };
+    var n = document.createElement("button"); n.className="qbtn no"; n.textContent="Deny credit";
+    n.onclick = function(){ resolveFlagUI(f.logId, false); };
+    q.appendChild(a); q.appendChild(n); d.appendChild(q);
+    holder.appendChild(d);
+  });
+
+  renderTally();
+}
+async function cancelUI(confId, makeQ){
+  try{ await call('cancelConference', TOKEN, confId, makeQ); }catch(e){ toast(e.message); return; }
+  notify("Cancelled — now accepting 10-question credit.");
+  loadAdmin();
+}
+async function restoreUI(confId){
+  try{ await call('restoreConference', TOKEN, confId); }catch(e){ toast(e.message); return; }
+  notify("Restored to the schedule.");
+  loadAdmin();
+}
+async function resolveFlagUI(logId, approve){
+  try{ await call('resolveFlag', TOKEN, logId, approve); }catch(e){ toast(e.message); return; }
+  loadAdmin();
+}
+async function addConference(){
+  var o = {
+    type: document.getElementById("add-type").value,
+    date: document.getElementById("add-date").value,
+    site: document.getElementById("add-site").value,
+    title: document.getElementById("add-title").value.trim() || "Untitled session",
+    credit: parseFloat(document.getElementById("add-credit").value) || 1,
+    qEligible: document.getElementById("add-qelig").checked
+  };
+  try{ await call('addConference', TOKEN, o); }catch(e){ toast(e.message); return; }
+  document.getElementById("add-title").value = "";
+  var ok = document.getElementById("add-ok");
+  ok.style.display = "block"; setTimeout(function(){ ok.style.display="none"; }, 3500);
+  loadAdmin();
+}
+
+async function genSchedule(){
+  var s = document.getElementById("gen-start").value, e = document.getElementById("gen-end").value;
+  if (!s || !e) return;
+  var r;
+  try{ r = await call('generateSchedule', TOKEN, s, e); }catch(err){ toast(err.message); return; }
+  var ok = document.getElementById("gen-ok");
+  ok.textContent = "Generated " + r.n + " listings (" + s + " to " + e + "). Existing listings were skipped.";
+  ok.style.display = "block"; setTimeout(function(){ ok.style.display="none"; }, 6000);
+  loadAdmin();
+}
+
+/* schedule import — parse client-side, commit server-side */
+function normalizeType(t){
+  var s = (t||"").toLowerCase();
+  if (s.indexOf("goldman")>=0) return "Goldman Rounds";
+  if (s.indexOf("sim")>=0) return "Sim Session";
+  if (s.indexOf("grand")>=0) return "Grand Rounds";
+  if (s.indexOf("ahd")>=0){
+    if (s.indexOf("3")>=0) return "AHD";
+    if (s.indexOf("2")>=0) return "AHD";
+    return "AHD";
+  }
+  if (s.indexOf("bonus")>=0 || s.indexOf("special")>=0 || s.indexOf("journal")>=0) return "Bonus / Special Event";
+  return "Noon Conference";
+}
+function parseDateFlex(s){
+  s = (s||"").trim();
+  var m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m) return s.slice(0,10);
+  m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (m){
+    var y = m[3].length===2 ? "20"+m[3] : m[3];
+    return y + "-" + ("0"+m[1]).slice(-2) + "-" + ("0"+m[2]).slice(-2);
+  }
+  return null;
+}
+function importParse(){
+  var raw = document.getElementById("imp-text").value;
+  var out = document.getElementById("imp-out");
+  _IMP = [];
+  var bad = [];
+  raw.split("\n").map(function(l){return l.trim();}).filter(Boolean).forEach(function(line){
+    var parts = line.split(/\t|,/).map(function(p){return p.trim();}).filter(Boolean);
+    if (parts.length < 3){ bad.push(line); return; }
+    var date = parseDateFlex(parts[0]);
+    if (!date){ bad.push(line); return; }
+    var qE = parts[parts.length-1].toUpperCase()==="Q";
+    var type = normalizeType(parts[1]);
+    var title = parts.slice(2, qE ? parts.length-1 : parts.length).join(", ") || "Untitled session";
+    _IMP.push({date:date, type:type, title:title, qEligible:qE, credit:1});
+  });
+  if (!_IMP.length){
+    out.innerHTML = '<p class="sub" style="margin-top:12px;color:var(--brick)">No valid lines found. Expected: date, type, title.</p>';
+    return;
+  }
+  var html = '<div class="eyebrow" style="margin-top:14px">Preview · ' + _IMP.length + ' listing(s)' + (bad.length ? ' · ' + bad.length + ' skipped' : '') + '</div>';
+  _IMP.forEach(function(p){
+    html += '<div class="conf-row"><div class="ci"><div class="ct">' + p.type + ' — ' + p.title + '</div><div class="cm">' + p.date + (p.qEligible ? ' · Q-CREDIT ELIGIBLE' : '') + '</div></div></div>';
+  });
+  out.innerHTML = html;
+  var b = document.createElement("button");
+  b.className = "btn btn-primary"; b.style.marginTop = "8px";
+  b.textContent = "Import " + _IMP.length + " conference(s)";
+  b.onclick = importCommit;
+  out.appendChild(b);
+}
+async function importCommit(){
+  try{ await call('importSchedule', TOKEN, _IMP); }catch(e){ toast(e.message); return; }
+  document.getElementById("imp-out").innerHTML = '<div class="msg ok" style="display:block">Imported ' + _IMP.length + ' conference(s).</div>';
+  document.getElementById("imp-text").value = "";
+  _IMP = [];
+  loadAdmin();
+}
+
+/* bulk award */
+function bulkCount(){
+  var n = document.querySelectorAll("#bulk-roster input:checked").length;
+  document.getElementById("bulk-n").textContent = n;
+}
+function bulkMatch(){
+  var raw = document.getElementById("bulk-paste").value;
+  var un = document.getElementById("bulk-unmatched");
+  var lines = raw.split("\n").map(function(l){return l.trim();}).filter(Boolean);
+  if (!lines.length) return;
+  var unmatched = [], matched = 0;
+  var roster = ADMIN_DATA ? ADMIN_DATA.roster : [];
+  lines.forEach(function(line){
+    var low = line.toLowerCase().replace(/\s+/g," ");
+    var r = roster.filter(function(x){
+      return x.email.toLowerCase()===low ||
+        (x.last+", "+x.first).toLowerCase()===low ||
+        (x.first+" "+x.last).toLowerCase()===low ||
+        (x.last+" "+x.first).toLowerCase()===low;
+    })[0];
+    if (r){
+      var cb = document.querySelector('#bulk-roster input[value="'+r.email+'"]');
+      if (cb){ cb.checked = true; matched++; }
+    } else unmatched.push(line);
+  });
+  bulkCount();
+  if (unmatched.length){
+    un.textContent = "Matched " + matched + " · not on roster: " + unmatched.join("; ");
+    un.style.display = "block";
+  } else un.style.display = "none";
+}
+async function bulkAward(){
+  var confId = document.getElementById("bulk-conf").value;
+  var action = document.getElementById("bulk-action").value;
+  var emails = Array.prototype.map.call(document.querySelectorAll("#bulk-roster input:checked"), function(cb){ return cb.value; });
+  if (!emails.length) return;
+  var r;
+  try{ r = await call('bulkAward', TOKEN, confId, emails, action); }catch(e){ toast(e.message); return; }
+  var ok = document.getElementById("bulk-ok");
+  ok.textContent = (action==="Excused" ? "Marked " + r.n + " resident(s) excused." : "Credit awarded to " + r.n + " resident(s).");
+  ok.style.display = "block"; setTimeout(function(){ ok.style.display="none"; }, 4000);
+  document.getElementById("bulk-paste").value = "";
+  loadAdmin();
+}
+
+/* tally */
+function renderTally(){
+  var rows = ADMIN_DATA.tally;
+  var html = '<table class="roster-tbl"><tr><th>Class</th><th>Resident</th><th>House</th><th>Points</th></tr>';
+  var lastPgy = 0;
+  rows.forEach(function(r){
+    html += '<tr><td class="pgy">' + (r.pgy!==lastPgy ? "PGY-"+r.pgy : "") + '</td><td>' + r.last + ', ' + r.first +
+      '</td><td style="color:var(--muted);font-size:11px">' + (r.house||"") +
+      '</td><td class="mono" style="font-weight:700;color:var(--saguaro-d)">' + r.total.toFixed(0) + '</td></tr>';
+    lastPgy = r.pgy;
+  });
+  html += '</table>';
+  var houseTotals = {};
+  rows.forEach(function(r){ if (r.house) houseTotals[r.house] = (houseTotals[r.house]||0) + r.total; });
+  html += '<div style="margin-top:10px">' + Object.keys(houseTotals).map(function(h){
+    return '<span class="house-chip">' + h + ' <b>' + houseTotals[h].toFixed(0) + '</b></span>';
+  }).join("") + '</div>';
+  document.getElementById("tally-out").innerHTML = html;
+}
+function downloadCsv(filename, csv){
+  var url = URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  var a = document.createElement("a"); a.href = url; a.download = filename; a.click();
+}
+async function tallyDownload(){
+  try{ var r = await call('exportTally', TOKEN); downloadCsv(r.filename, r.csv); }
+  catch(e){ toast(e.message); }
+}
+function pointomaticPreview(){
+  var rows = ADMIN_DATA.tally;
+  var houseTotals = {};
+  rows.forEach(function(r){ if (r.house) houseTotals[r.house] = (houseTotals[r.house]||0) + r.total; });
+  var lines = Object.keys(houseTotals).map(function(h){
+    return "&bull; House " + h + ": <strong>" + houseTotals[h].toFixed(1) + "</strong> pts";
+  }).join("<br>");
+  document.getElementById("pom-out").innerHTML =
+    '<div class="reply-prev" style="margin-top:12px">' +
+    '<div class="fr">WEEKLY SYNC &middot; MON 06:00 &middot; POINT-O-MATIC HOUSE CUP SHEET</div>' +
+    'Current totals that will post:<br><br>' + lines + '<br><br>' +
+    'Enable by pasting the Point-o-matic spreadsheet ID into CONFIG.POINTOMATIC_SHEET_ID in Code.gs.' +
+    '</div>';
+}
+async function showExport(kind){
+  var confId = document.getElementById("exp-conf").value;
+  var out = document.getElementById("a-export-out");
+  var r;
+  try{ r = await call('exportConference', TOKEN, confId, kind); }catch(e){ toast(e.message); return; }
+  var pre = document.createElement("pre"); pre.className = "csvprev";
+  pre.textContent = r.csv.split("\n").slice(0, 12).join("\n") + (r.csv.split("\n").length > 12 ? "\n…" : "");
+  out.innerHTML = '<div class="eyebrow" style="margin-top:15px">Preview · ' + r.filename + '</div>';
+  out.appendChild(pre);
+  var a = document.createElement("a");
+  a.className = "dl-link"; a.textContent = "Download " + r.filename; a.href = "#";
+  a.onclick = function(ev){ ev.preventDefault(); downloadCsv(r.filename, r.csv); };
+  out.appendChild(a);
+  if (kind !== 'staff'){
+    var p = document.createElement("p");
+    p.className = "sub"; p.style.cssText = "font-size:11.5px;margin-top:8px";
+    p.innerHTML = 'Layout is read from the <span class="mono" style="color:var(--sky)">Export_Config</span> sheet tab — edit those rows when GME confirms NI\'s specification.';
+    out.appendChild(p);
+  }
+}
+
+/* nightly / morning preview — production runs on the server trigger */
+function nightlyPreview(){
+  document.getElementById("ne-out").innerHTML =
+    '<div class="reply-prev" style="margin-top:14px"><div class="fr">SERVER-SIDE TRIGGER</div>' +
+    'The morning report runs automatically from Code.gs at the configured hour (weekdays; Monday covers Fri&ndash;Sun). ' +
+    'To send one manually right now, open the Sheet &rarr; Extensions &rarr; Apps Script &rarr; run <span class="mono">morningReport()</span>.</div>';
+}
+
+boot();
+
+</script>
+</body>
+</html>
