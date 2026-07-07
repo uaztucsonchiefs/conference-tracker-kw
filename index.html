@@ -146,6 +146,15 @@ label.fld{display:block;font-size:11px;font-weight:700;color:var(--muted);letter
 .roster-hit .nm{font-weight:700;font-size:14px}
 .roster-hit .cls{font-family:var(--mono);font-size:9.5px;color:var(--saguaro-d);letter-spacing:.07em;margin-top:1px}
 .signal-row{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+.track-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:8px 0 4px}
+.track{border:1.5px solid var(--line);background:var(--panel-2);border-radius:9px;padding:11px 6px;text-align:center;
+  cursor:pointer;font-family:var(--disp);font-size:12.5px;font-weight:700;color:var(--muted);transition:all .13s}
+.track.on{border-color:var(--saguaro);color:var(--saguaro-d);background:var(--saguaro-tint)}
+.cred-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+.cred-recent li{display:flex;gap:9px;align-items:baseline;padding:8px 2px;border-bottom:1px solid var(--line-soft);font-size:12.5px;list-style:none}
+.cred-recent li:last-child{border-bottom:none}
+.cred-recent .d{font-family:var(--mono);font-size:10px;color:var(--faint);flex-shrink:0}
+.cred-recent .s{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--saguaro-d)}
 .success-head{display:flex;flex-direction:column;align-items:center;padding:6px 0 2px}
 .checkring{width:70px;height:70px;margin-bottom:10px}
 .checkring .c{stroke:var(--saguaro);stroke-width:3;fill:var(--saguaro-tint);stroke-dasharray:220;stroke-dashoffset:220;animation:draw .6s ease-out forwards}
@@ -205,6 +214,10 @@ label.fld{display:block;font-size:11px;font-weight:700;color:var(--muted);letter
 .mini-btn{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:7px;
   padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:.12s}
 .mini-btn:hover{border-color:var(--saguaro);color:var(--saguaro-d);background:var(--saguaro-tint)}
+.edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
+.edit-grid input,.edit-grid select{padding:8px 10px;font-size:12.5px}
+.edit-grid .full{grid-column:1/-1}
+.edit-grid label.tgl{font-size:12px}
 .flag-item{border-left:3px solid var(--adobe);padding:10px 12px;background:var(--panel-2);border-radius:0 9px 9px 0;margin-bottom:8px}
 .flag-item .fr{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .flag-item .who{font-weight:700;font-size:13px}
@@ -321,7 +334,22 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
     <div class="msg err" id="r-email-err">No roster match for that email. Check the spelling, or contact a chief resident.</div>
     <div style="margin-top:12px">
       <button class="btn btn-primary" onclick="residentLookup()">Continue</button>
+      <button class="btn btn-ghost" style="margin-top:8px" onclick="creditsLookup()">Look up my conference credits</button>
     </div>
+  </div>
+
+  <div class="card hide" id="r-credits">
+    <div class="eyebrow">My credits</div>
+    <h2 id="cr-name">—</h2>
+    <div class="cred-stats">
+      <div class="stat"><div class="n" id="cr-total">0</div><div class="l">Points</div></div>
+      <div class="stat sky"><div class="n" id="cr-ahd">0/0</div><div class="l">AHD ½ Days</div></div>
+      <div class="stat adobe"><div class="n" id="cr-amb">0</div><div class="l">Ambulatory</div></div>
+    </div>
+    <p class="hint" style="text-align:left;margin:0 0 6px" id="cr-pct">—</p>
+    <div class="eyebrow" style="margin-top:12px">Recent credits</div>
+    <ul class="cred-recent" id="cr-recent"></ul>
+    <button class="btn btn-ghost" style="margin-top:14px" onclick="creditsBack()">Back</button>
   </div>
 
   <div class="card hide" id="r-step2">
@@ -338,13 +366,20 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
     <label class="fld">Now in session</label>
     <div class="conf-banner">
       <div class="live-dot"></div>
-      <div>
+      <div style="flex:1;min-width:0">
         <div class="conf-name" id="r-conf-name">—</div>
         <div class="conf-meta" id="r-conf-meta">—</div>
+        <select id="r-conf-select" class="hide" style="margin-top:8px" onchange="renderLiveConf()"></select>
       </div>
     </div>
 
-    <p class="sub" style="text-align:center">Enter the code displayed at the front of the room.<br>It rotates every 30 seconds.</p>
+    <div class="hide" id="r-track-wrap">
+      <label class="fld">Which session are you attending?</label>
+      <div class="track-grid" id="r-track"></div>
+      <div class="msg err" id="r-track-err">Please select which session you're attending.</div>
+    </div>
+
+    <p class="sub" style="text-align:center">Enter the code displayed at the front of the room.<br>It rotates every 15 seconds.</p>
 
     <div class="code-boxes">
       <input class="code-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" aria-label="Code digit 1">
@@ -395,7 +430,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
       <div class="eyebrow" style="margin:0">Alternate credit</div>
     </div>
     <h2>Practice question credit</h2>
-    <p class="sub">Ten board-style questions from any question bank equal one conference credit. Available only for conferences designated Q-credit eligible — your credit posts to that specific listing. Submissions are due by <strong>midnight</strong> and count toward the listed day.</p>
+    <p class="sub">Ten board-style questions from any question bank equal one conference credit. Available only for conferences designated Q-credit eligible — your credit posts to that specific listing. You can submit up to a day early; submissions are due by <strong>midnight</strong> of the conference date.</p>
 
     <label class="fld">Apply credit to</label>
     <select id="q-conf"></select>
@@ -484,7 +519,10 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
   <div class="card" id="p-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <div class="eyebrow" style="margin:0">Room display · project this screen</div>
-      <button class="mini-btn" onclick="pFullscreen()">⤢ Fullscreen</button>
+      <div style="display:flex;gap:6px">
+        <button class="mini-btn" onclick="pClose()">Close check-in</button>
+        <button class="mini-btn" onclick="pFullscreen()">⤢ Fullscreen</button>
+      </div>
     </div>
     <p class="sub" style="margin-bottom:10px"><strong>1.</strong> Tap your session &nbsp;·&nbsp; <strong>2.</strong> Project this screen. The code rotates by itself — nothing else to do.</p>
     <div id="p-today"></div>
@@ -507,7 +545,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
     </div>
 
     <div class="qr-holder"><div id="qrbox"></div></div>
-    <p class="pres-meta">SCAN TO OPEN CHECK-IN · QR CARRIES THE LIVE CODE<br>CODE ROTATES EVERY 30 SECONDS · UNIQUE PER CONFERENCE</p>
+    <p class="pres-meta">SCAN TO OPEN CHECK-IN · QR CARRIES THE LIVE CODE<br>CODE ROTATES EVERY 15 SECONDS · UNIQUE PER CONFERENCE</p>
   </div>
 
   <div class="card">
@@ -531,8 +569,14 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
   </div>
 
   <div class="card">
-    <div class="eyebrow">This week's schedule</div>
-    <p class="sub" style="margin-bottom:10px">Each listing carries its own code, QR, and attendance log, and maps 1-to-1 to an NI conference entry.</p>
+    <div class="eyebrow">Schedule</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <button class="mini-btn" onclick="weekNav(-1)">‹ Prev</button>
+      <div style="flex:1;text-align:center;font-family:var(--disp);font-weight:700;font-size:13px" id="wk-label">—</div>
+      <button class="mini-btn" onclick="weekNav(1)">Next ›</button>
+      <button class="mini-btn" onclick="weekNav(0)">Today</button>
+    </div>
+    <p class="sub" style="margin-bottom:10px;font-size:12px">One week at a time — each listing has its own code, QR, and log, and maps 1-to-1 to an NI entry. Edit changes title, time, site, credit, or Q-eligibility in place.</p>
     <div id="a-week"></div>
   </div>
 
@@ -543,9 +587,9 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
         <label class="fld">Type</label>
         <select id="add-type">
           <option>Noon Conference</option>
-          <option>Goldman Rounds</option>
-          <option>Sim Session</option>
+          <option>Intern Report</option>
           <option>Grand Rounds</option>
+          <option>Ambulatory Half Day</option>
           <option>AHD</option>
           <option>Bonus / Special Event</option>
         </select>
@@ -577,7 +621,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
 
   <div class="card">
     <div class="eyebrow">Generate the year · weekly template</div>
-    <p class="sub">Stamps the standing week across a date range: Mon Noon Conference (BUMCT · VA · South), Tue Goldman Rounds (BUMCT) · Noon Conference (South) · Sim Session (VA), Wed Grand Rounds, Thu AHD Hours 1–3, Fri Noon Conference (BUMCT · South · VA). Grand Rounds generates as <em>cancelled + Q-credit eligible</em> through Sept 1 per the current hiatus — edit <span class="mono" style="color:var(--sky)">WEEKLY_TEMPLATE</span> / <span class="mono" style="color:var(--sky)">HIATUS</span> in Code.gs when the week changes. Safe to re-run; existing listings are skipped.</p>
+    <p class="sub">Stamps the standing week across a date range: Mon <strong>Intern Report</strong> · Tue <strong>Noon Conference</strong> (residents pick Goldman / Sim / South Campus Special at check-in) · Wed <strong>Ambulatory Half Day</strong> (single check-in; Grand Rounds rides along as cancelled + Q-credit through the hiatus) · Thu <strong>AHD Hours 1–3</strong> · Fri <strong>Noon Conference</strong> (Resident Report / Sim choice). Edit <span class="mono" style="color:var(--sky)">WEEKLY_TEMPLATE</span> / <span class="mono" style="color:var(--sky)">HIATUS</span> in Code.gs when the week changes. Safe to re-run; existing listings are skipped.</p>
     <div class="grid-2">
       <div><label class="fld">Start</label><input type="date" id="gen-start" value="2026-07-06"></div>
       <div><label class="fld">End</label><input type="date" id="gen-end" value="2027-06-25"></div>
@@ -626,7 +670,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
 
   <div class="card">
     <div class="eyebrow">Credit totals · House Cup tally</div>
-    <p class="sub">One point per conference attended — each AHD hour counts as its own conference. Quarterly totals feed the House Cup.</p>
+    <p class="sub">One point per conference attended (each AHD hour is its own point). The AHD columns track the program requirement separately: a half-day counts only when all three hours are attended, with a goal of ≥50% of offered half-days.</p>
     <div id="tally-out"></div>
     <div class="export-grid">
       <button class="exp-btn" onclick="tallyDownload()">
@@ -690,7 +734,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
    Served by Apps Script  -> uses google.script.run (API_URL ignored).
    Hosted on Vercel       -> fetches the Apps Script /exec URL as a JSON API.
    Set API_URL to your deployed /exec URL for Vercel hosting. */
-var API_URL = "https://script.google.com/macros/s/AKfycbwY-NhhpcE-j-5mR-hwIvJkgc6h2paFvDFGQ5h_alE-zrusIUod3THDB-WBg47jh2KW/exec";
+var API_URL = "PASTE_YOUR_EXEC_URL_HERE";
 function call(fn){
   var args = Array.prototype.slice.call(arguments, 1);
   if (typeof google !== "undefined" && google.script && google.script.run){
@@ -730,6 +774,25 @@ var TOKEN = sessionStorage.getItem('trk_token') || null;
 var presenterConf = null;
 var presenterTimer = null;
 var ADMIN_DATA = null;
+var weekStart = mondayOf(new Date());
+function mondayOf(d){
+  d = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  var day = d.getDay();
+  d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+  return d;
+}
+function iso(d){ return d.getFullYear() + "-" + ("0"+(d.getMonth()+1)).slice(-2) + "-" + ("0"+d.getDate()).slice(-2); }
+function weekNav(dir){
+  if (dir === 0) weekStart = mondayOf(new Date());
+  else weekStart = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + dir*7);
+  renderAdmin();
+}
+function inWindow(dateStr, backDays, fwdDays){
+  var t = new Date(); t = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+  var d = new Date(dateStr + "T12:00:00");
+  var diff = (d - t) / 86400000;
+  return diff >= -backDays && diff <= fwdDays;
+}
 var qImage = null;
 var _IMP = [];
 
@@ -821,17 +884,20 @@ async function residentLookup(){
   err.style.display="none";
   currentResident = {first:hit.first, last:hit.last, pgy:hit.pgy, email:em};
   try{ BOOT = await call('bootstrap'); }catch(e){}
-  var lc = BOOT.liveConf;
   document.getElementById("r-avatar").textContent = hit.first[0]+hit.last[0];
   document.getElementById("r-name").textContent = hit.first+" "+hit.last;
   document.getElementById("r-class").textContent = "PGY-"+hit.pgy+" · ROSTER MATCH";
-  if (lc){
-    document.getElementById("r-conf-name").textContent = lc.type + (lc.title!==lc.type ? " — " + lc.title : "") + (lc.site ? " · " + lc.site : "");
-    document.getElementById("r-conf-meta").textContent = lc.date + " · " + lc.time + " · CHECK-IN OPEN";
-  } else {
-    document.getElementById("r-conf-name").textContent = "No conference is open for check-in right now";
-    document.getElementById("r-conf-meta").textContent = "Q-CREDIT SUBMISSION IS STILL AVAILABLE BELOW";
-  }
+  var sel = document.getElementById("r-conf-select");
+  var lcs = BOOT.liveConfs || (BOOT.liveConf ? [BOOT.liveConf] : []);
+  sel.innerHTML = "";
+  lcs.forEach(function(c){
+    var o = document.createElement("option");
+    o.value = c.id;
+    o.textContent = c.type + (c.title!==c.type ? " — " + c.title : "") + (c.site ? " · " + c.site : "");
+    sel.appendChild(o);
+  });
+  sel.classList.toggle("hide", lcs.length < 2);
+  renderLiveConf();
   document.getElementById("r-step1").classList.add("hide");
   document.getElementById("r-step2").classList.remove("hide");
   requestGps();
@@ -858,11 +924,52 @@ boxes.forEach(function(b,i){
     if (e.key==="Backspace" && !b.value && i>0) boxes[i-1].focus();
   });
 });
+function chosenLiveConf(){
+  var lcs = BOOT.liveConfs || (BOOT.liveConf ? [BOOT.liveConf] : []);
+  if (!lcs.length) return null;
+  var sel = document.getElementById("r-conf-select");
+  return lcs.filter(function(c){ return c.id === sel.value; })[0] || lcs[0];
+}
+var chosenTrack = null;
+function renderTracks(lc){
+  var wrap = document.getElementById("r-track-wrap");
+  var grid = document.getElementById("r-track");
+  chosenTrack = null;
+  grid.innerHTML = "";
+  var opts = (lc && lc.options) || [];
+  wrap.classList.toggle("hide", opts.length === 0);
+  opts.forEach(function(o){
+    var d = document.createElement("div");
+    d.className = "track"; d.textContent = o;
+    d.onclick = function(){
+      chosenTrack = o;
+      document.getElementById("r-track-err").style.display = "none";
+      Array.prototype.forEach.call(grid.children, function(x){ x.classList.toggle("on", x === d); });
+    };
+    grid.appendChild(d);
+  });
+}
+function renderLiveConf(){
+  var lc = chosenLiveConf();
+  renderTracks(lc);
+  if (lc){
+    document.getElementById("r-conf-name").textContent = lc.type + (lc.title!==lc.type ? " — " + lc.title : "") + (lc.site ? " · " + lc.site : "");
+    document.getElementById("r-conf-meta").textContent = lc.date + " · " + lc.time + " · CHECK-IN OPEN";
+  } else {
+    document.getElementById("r-conf-name").textContent = "No conference is open for check-in right now";
+    document.getElementById("r-conf-meta").textContent = "Q-CREDIT SUBMISSION IS STILL AVAILABLE BELOW";
+  }
+}
 async function residentSubmit(){
-  if (!BOOT.liveConf){ 
+  var liveNow = chosenLiveConf();
+  if (!liveNow){ 
     var ce = document.getElementById("r-code-err");
     ce.textContent = "No conference is open for check-in right now.";
     ce.style.display="block"; return;
+  }
+  if (liveNow.options && liveNow.options.length && !chosenTrack){
+    document.getElementById("r-track-err").style.display = "block";
+    return;
   }
   var entered = Array.prototype.map.call(boxes, function(b){return b.value;}).join("");
   var codeErr = document.getElementById("r-code-err");
@@ -871,8 +978,8 @@ async function residentSubmit(){
   var res;
   try{
     res = await call('checkIn', {
-      email: currentResident.email, confId: BOOT.liveConf.id, code: entered,
-      deviceId: deviceId(), lat: GPS.lat, lng: GPS.lng
+      email: currentResident.email, confId: liveNow.id, code: entered,
+      deviceId: deviceId(), lat: GPS.lat, lng: GPS.lng, track: chosenTrack
     });
   }catch(e){ codeErr.textContent = e.message; codeErr.style.display="block"; return; }
   if (!res.ok){
@@ -894,6 +1001,44 @@ async function residentSubmit(){
   s3.classList.remove("hide");
   s3.querySelectorAll(".c,.k").forEach(function(el){ el.style.animation="none"; void el.getBoundingClientRect(); el.style.animation=""; });
 }
+async function creditsLookup(){
+  var em = document.getElementById("r-email").value.trim().toLowerCase();
+  var err = document.getElementById("r-email-err");
+  if (!em || em.indexOf("@")<1){
+    err.textContent = "Enter your program email above first, then tap Look up.";
+    err.style.display="block"; return;
+  }
+  var r;
+  try{ r = await call('myCredits', em); }
+  catch(e){ err.textContent = e.message; err.style.display="block"; return; }
+  if (!r.found){
+    err.textContent = "No roster match for that email. Check the spelling, or contact a chief resident.";
+    err.style.display="block"; return;
+  }
+  err.style.display="none";
+  document.getElementById("cr-name").textContent = r.first + "'s conference credits";
+  document.getElementById("cr-total").textContent = r.total.toFixed(0);
+  document.getElementById("cr-ahd").textContent = r.ahdHalf + "/" + r.ahdOf;
+  document.getElementById("cr-amb").textContent = r.amb;
+  document.getElementById("cr-pct").textContent = (r.ahdPct == null)
+    ? "No academic half-days offered yet this year."
+    : "Academic half-days: " + r.ahdPct + "% attended (all three hours required; goal ≥50%).";
+  var ul = document.getElementById("cr-recent");
+  ul.innerHTML = "";
+  if (!r.recent.length) ul.innerHTML = '<li><span class="sub">No credits recorded yet.</span></li>';
+  r.recent.forEach(function(x){
+    var li = document.createElement("li");
+    li.innerHTML = '<span class="d">' + x.date + '</span><span>' + x.type + (x.track ? ' — ' + x.track : '') + '</span><span class="s">' + x.status.toUpperCase() + '</span>';
+    ul.appendChild(li);
+  });
+  document.getElementById("r-step1").classList.add("hide");
+  document.getElementById("r-credits").classList.remove("hide");
+  window.scrollTo({top:0});
+}
+function creditsBack(){
+  document.getElementById("r-credits").classList.add("hide");
+  document.getElementById("r-step1").classList.remove("hide");
+}
 function residentReset(){
   currentResident = null;
   document.getElementById("r-email").value = "";
@@ -901,6 +1046,7 @@ function residentReset(){
   document.getElementById("r-step2").classList.add("hide");
   document.getElementById("r-step3").classList.add("hide");
   document.getElementById("q-area").classList.add("hide");
+  document.getElementById("r-credits").classList.add("hide");
   document.getElementById("r-step1").classList.remove("hide");
 }
 function showQArea(){
@@ -1027,7 +1173,7 @@ async function fillAllSelect(){
   if (!ADMIN_DATA){ try{ ADMIN_DATA = await call('getAdminData', TOKEN); }catch(e){ return; } }
   var sel = document.getElementById("p-select");
   sel.innerHTML = "";
-  ADMIN_DATA.conferences.forEach(function(c){
+  ADMIN_DATA.conferences.filter(function(c){ return inWindow(c.date, 14, 28) && c.status !== "Cancelled"; }).forEach(function(c){
     var o = document.createElement("option");
     o.value = c.id; o.textContent = c.date + " · " + c.type + " — " + c.title;
     if (c.id===presenterConf) o.selected = true;
@@ -1043,6 +1189,16 @@ async function pickSession(id){
   startPresenterPolling();
 }
 var lastCode = "", ringAnim = null;
+async function pClose(){
+  if (!presenterConf) return;
+  try{ await call('closeConference', TOKEN, presenterConf); }catch(e){ toast(e.message); return; }
+  stopPresenterPolling();
+  var holder = document.getElementById("p-code");
+  Array.prototype.forEach.call(holder.children, function(d){ d.textContent = "·"; });
+  document.getElementById("p-count").textContent = "";
+  notify("Check-in closed for this session.");
+  renderTodayButtons();
+}
 function pFullscreen(){
   var el = document.getElementById("p-card");
   if (document.fullscreenElement) document.exitFullscreen();
@@ -1117,17 +1273,26 @@ function renderAdmin(){
   document.getElementById("a-confs").textContent = D.conferences.length;
   document.getElementById("a-flagged").textContent = D.flags.length;
 
-  /* schedule grouped by date */
+  /* schedule — one week at a time */
+  var wkEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6);
+  var s = iso(weekStart), e = iso(wkEnd);
+  var fmt = function(d){ return d.toLocaleDateString(undefined, {month:"short", day:"numeric"}); };
+  document.getElementById("wk-label").textContent = "Week of " + fmt(weekStart) + " – " + fmt(wkEnd) + ", " + wkEnd.getFullYear();
   var wk = document.getElementById("a-week");
   wk.innerHTML = "";
+  var weekConfs = D.conferences.filter(function(c){ return c.date >= s && c.date <= e; });
+  if (!weekConfs.length){
+    wk.innerHTML = '<p class="sub" style="text-align:center;padding:12px 0">No conferences this week. Use Generate or Add below.</p>';
+  }
   var byDay = {};
-  D.conferences.forEach(function(c){ (byDay[c.date]=byDay[c.date]||[]).push(c); });
+  weekConfs.forEach(function(c){ (byDay[c.date]=byDay[c.date]||[]).push(c); });
   Object.keys(byDay).sort().forEach(function(day){
+    var dLabel = new Date(day + "T12:00:00").toLocaleDateString(undefined, {weekday:"long", month:"short", day:"numeric"});
     var g = document.createElement("div"); g.className = "day-group";
-    g.innerHTML = '<div class="day-label">' + day + '</div>';
+    g.innerHTML = '<div class="day-label">' + dLabel + '</div>';
     byDay[day].forEach(function(c){
-      var row = document.createElement("div");
       var cancelled = c.status === "Cancelled";
+      var row = document.createElement("div");
       row.className = "conf-row" + (c.live ? " live" : "");
       if (cancelled) row.style.opacity = ".72";
       row.innerHTML =
@@ -1145,6 +1310,10 @@ function renderAdmin(){
         btn.className = "mini-btn"; btn.textContent = "Code / QR";
         btn.onclick = function(){ presenterConf = c.id; go({dataset:{v:"presenter"}}); pickSession(c.id); };
         btns.appendChild(btn);
+        var ed = document.createElement("button");
+        ed.className = "mini-btn"; ed.textContent = "Edit";
+        ed.onclick = function(){ editRow(row, c); };
+        btns.appendChild(ed);
         var cx = document.createElement("button");
         cx.className = "mini-btn"; cx.textContent = "Cancel → Q";
         cx.onclick = function(){
@@ -1169,7 +1338,7 @@ function renderAdmin(){
     var sel = document.getElementById(id);
     var keep = sel.value;
     sel.innerHTML = "";
-    D.conferences.forEach(function(c){
+    D.conferences.filter(function(c){ return inWindow(c.date, 56, 28); }).forEach(function(c){
       var o = document.createElement("option");
       o.value = c.id; o.textContent = c.date + " · " + c.type + " — " + c.title;
       sel.appendChild(o);
@@ -1209,6 +1378,41 @@ function renderAdmin(){
 
   renderTally();
 }
+function editRow(row, c){
+  row.innerHTML = "";
+  var f = document.createElement("div");
+  f.className = "edit-grid";
+  f.innerHTML =
+    '<input class="full" id="ed-title" value="' + String(c.title).replace(/"/g,'&quot;') + '" placeholder="Title">' +
+    '<input id="ed-time" value="' + c.time + '" placeholder="Time (e.g., 12:00–13:00)">' +
+    '<select id="ed-site">' + ["BUMCT","South","VA",""].map(function(s){
+      return '<option value="'+s+'"'+(s===c.site?' selected':'')+'>'+(s||"—")+'</option>'; }).join("") + '</select>' +
+    '<input id="ed-credit" type="number" step="0.5" min="0.5" value="' + c.credit + '">' +
+    '<label class="tgl"><input type="checkbox" id="ed-q"' + (c.qEligible?' checked':'') + '> Q-credit eligible</label>';
+  var bar = document.createElement("div");
+  bar.className = "full"; bar.style.cssText = "display:flex;gap:8px";
+  var save = document.createElement("button");
+  save.className = "mini-btn"; save.style.flex = "1"; save.textContent = "Save";
+  save.onclick = async function(){
+    var o = {
+      title: f.querySelector("#ed-title").value.trim() || c.type,
+      time: f.querySelector("#ed-time").value.trim() || "TBD",
+      site: f.querySelector("#ed-site").value,
+      credit: parseFloat(f.querySelector("#ed-credit").value) || 1,
+      qEligible: f.querySelector("#ed-q").checked
+    };
+    try{ await call('updateConference', TOKEN, c.id, o); }catch(e){ toast(e.message); return; }
+    notify("Saved.");
+    loadAdmin();
+  };
+  var cancel = document.createElement("button");
+  cancel.className = "mini-btn"; cancel.style.flex = "1"; cancel.textContent = "Cancel";
+  cancel.onclick = function(){ renderAdmin(); };
+  bar.appendChild(save); bar.appendChild(cancel);
+  f.appendChild(bar);
+  row.appendChild(f);
+}
+
 async function cancelUI(confId, makeQ){
   try{ await call('cancelConference', TOKEN, confId, makeQ); }catch(e){ toast(e.message); return; }
   notify("Cancelled — now accepting 10-question credit.");
@@ -1253,8 +1457,8 @@ async function genSchedule(){
 /* schedule import — parse client-side, commit server-side */
 function normalizeType(t){
   var s = (t||"").toLowerCase();
-  if (s.indexOf("goldman")>=0) return "Goldman Rounds";
-  if (s.indexOf("sim")>=0) return "Sim Session";
+  if (s.indexOf("intern")>=0) return "Intern Report";
+  if (s.indexOf("ambulatory")>=0) return "Ambulatory Half Day";
   if (s.indexOf("grand")>=0) return "Grand Rounds";
   if (s.indexOf("ahd")>=0){
     if (s.indexOf("3")>=0) return "AHD";
@@ -1361,12 +1565,15 @@ async function bulkAward(){
 /* tally */
 function renderTally(){
   var rows = ADMIN_DATA.tally;
-  var html = '<table class="roster-tbl"><tr><th>Class</th><th>Resident</th><th>House</th><th>Points</th></tr>';
+  var html = '<table class="roster-tbl"><tr><th>Class</th><th>Resident</th><th>House</th><th>Points</th><th>AHD ½</th><th>AHD %</th></tr>';
   var lastPgy = 0;
   rows.forEach(function(r){
+    var pct = (r.ahdPct == null) ? '<span style="color:var(--faint)">—</span>'
+      : '<span class="' + (r.ahdPct >= 50 ? 'st-ok' : 'st-m') + '">' + r.ahdPct + '%</span>';
     html += '<tr><td class="pgy">' + (r.pgy!==lastPgy ? "PGY-"+r.pgy : "") + '</td><td>' + r.last + ', ' + r.first +
       '</td><td style="color:var(--muted);font-size:11px">' + (r.house||"") +
-      '</td><td class="mono" style="font-weight:700;color:var(--saguaro-d)">' + r.total.toFixed(0) + '</td></tr>';
+      '</td><td class="mono" style="font-weight:700;color:var(--saguaro-d)">' + r.total.toFixed(0) +
+      '</td><td class="mono">' + r.ahdHalf + '/' + r.ahdOf + '</td><td class="mono">' + pct + '</td></tr>';
     lastPgy = r.pgy;
   });
   html += '</table>';
