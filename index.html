@@ -524,7 +524,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
         <button class="mini-btn" onclick="pFullscreen()">⤢ Fullscreen</button>
       </div>
     </div>
-    <p class="sub" style="margin-bottom:10px"><strong>1.</strong> Tap your session &nbsp;·&nbsp; <strong>2.</strong> Project this screen. The code rotates by itself — nothing else to do.</p>
+    <p class="sub" style="margin-bottom:10px"><strong>1.</strong> Tap your session &nbsp;·&nbsp; <strong>2.</strong> Project this screen. The code rotates by itself. Check-in is open all day for today's conferences — this screen just displays the code.</p>
     <div id="p-today"></div>
     <button class="btn btn-ghost btn-sm" onclick="document.getElementById('p-all').classList.toggle('hide')">Other dates…</button>
     <div class="hide" id="p-all" style="margin-top:8px">
@@ -734,7 +734,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
    Served by Apps Script  -> uses google.script.run (API_URL ignored).
    Hosted on Vercel       -> fetches the Apps Script /exec URL as a JSON API.
    Set API_URL to your deployed /exec URL for Vercel hosting. */
-var API_URL = "PASTE_YOUR_EXEC_URL_HERE";
+var API_URL = "https://script.google.com/macros/s/AKfycbxVZgKcY0zPh9EufKV3LlKgcyYmbE01xLeIoRZuslOEB9P4txFHLHLKqMvKaQmd_xXH/exec";
 function call(fn){
   var args = Array.prototype.slice.call(arguments, 1);
   if (typeof google !== "undefined" && google.script && google.script.run){
@@ -888,12 +888,12 @@ async function residentLookup(){
   document.getElementById("r-name").textContent = hit.first+" "+hit.last;
   document.getElementById("r-class").textContent = "PGY-"+hit.pgy+" · ROSTER MATCH";
   var sel = document.getElementById("r-conf-select");
-  var lcs = BOOT.liveConfs || (BOOT.liveConf ? [BOOT.liveConf] : []);
+  var lcs = todaysCheckable();
   sel.innerHTML = "";
   lcs.forEach(function(c){
     var o = document.createElement("option");
     o.value = c.id;
-    o.textContent = c.type + (c.title!==c.type ? " — " + c.title : "") + (c.site ? " · " + c.site : "");
+    o.textContent = c.type + (c.title!==c.type ? " — " + c.title : "") + (c.site ? " · " + c.site : "") + (c.live ? " · IN SESSION" : "");
     sel.appendChild(o);
   });
   sel.classList.toggle("hide", lcs.length < 2);
@@ -924,8 +924,14 @@ boxes.forEach(function(b,i){
     if (e.key==="Backspace" && !b.value && i>0) boxes[i-1].focus();
   });
 });
+function todaysCheckable(){
+  var list = (BOOT.todayConfs || []).filter(function(c){ return c.status !== "Cancelled"; });
+  // put any in-session conference first as the default selection
+  list.sort(function(a,b){ return (b.live?1:0) - (a.live?1:0); });
+  return list;
+}
 function chosenLiveConf(){
-  var lcs = BOOT.liveConfs || (BOOT.liveConf ? [BOOT.liveConf] : []);
+  var lcs = todaysCheckable();
   if (!lcs.length) return null;
   var sel = document.getElementById("r-conf-select");
   return lcs.filter(function(c){ return c.id === sel.value; })[0] || lcs[0];
@@ -954,9 +960,9 @@ function renderLiveConf(){
   renderTracks(lc);
   if (lc){
     document.getElementById("r-conf-name").textContent = lc.type + (lc.title!==lc.type ? " — " + lc.title : "") + (lc.site ? " · " + lc.site : "");
-    document.getElementById("r-conf-meta").textContent = lc.date + " · " + lc.time + " · CHECK-IN OPEN";
+    document.getElementById("r-conf-meta").textContent = lc.date + " · " + lc.time + (lc.live ? " · IN SESSION" : " · OPEN ALL DAY");
   } else {
-    document.getElementById("r-conf-name").textContent = "No conference is open for check-in right now";
+    document.getElementById("r-conf-name").textContent = "No conference is scheduled today";
     document.getElementById("r-conf-meta").textContent = "Q-CREDIT SUBMISSION IS STILL AVAILABLE BELOW";
   }
 }
@@ -964,7 +970,7 @@ async function residentSubmit(){
   var liveNow = chosenLiveConf();
   if (!liveNow){ 
     var ce = document.getElementById("r-code-err");
-    ce.textContent = "No conference is open for check-in right now.";
+    ce.textContent = "No conference is scheduled today.";
     ce.style.display="block"; return;
   }
   if (liveNow.options && liveNow.options.length && !chosenTrack){
@@ -987,7 +993,9 @@ async function residentSubmit(){
     boxes.forEach(function(b){ b.classList.add("err"); });
     setTimeout(function(){ boxes.forEach(function(b){ b.classList.remove("err"); }); }, 350);
     codeErr.textContent = res.reason==="closed"
-      ? "Check-in for this conference has closed."
+      ? "This conference isn't available for check-in."
+      : res.reason==="notToday"
+      ? "That conference isn't scheduled for today."
       : "That code is incorrect or has expired. Check the current code on the room screen and try again.";
     codeErr.style.display="block"; return;
   }
