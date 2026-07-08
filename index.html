@@ -200,7 +200,7 @@ label.fld{display:block;font-size:11px;font-weight:700;color:var(--muted);letter
 .day-group{margin-bottom:4px}
 .day-label{display:flex;align-items:center;gap:8px;font-family:var(--disp);font-size:10.5px;font-weight:700;letter-spacing:.09em;color:var(--muted);text-transform:uppercase;
   padding:10px 2px 6px;margin-bottom:7px}
-.day-label::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+
 .conf-row{display:flex;align-items:center;gap:10px;padding:10px 11px;border:1px solid var(--line);
   border-radius:10px;margin-bottom:7px;background:var(--panel-2);transition:border-color .13s}
 .conf-row:hover{border-color:var(--saguaro)}
@@ -379,7 +379,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
       <div class="msg err" id="r-track-err">Please select which session you're attending.</div>
     </div>
 
-    <p class="sub" style="text-align:center">Enter the code displayed at the front of the room.<br>It rotates every 15 seconds.</p>
+    <p class="sub" style="text-align:center">Enter the code displayed at the front of the room.<br>It rotates every 30 seconds.</p>
 
     <div class="code-boxes">
       <input class="code-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" aria-label="Code digit 1">
@@ -392,7 +392,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
     <div class="msg warn" id="r-dupe-warn">You're already checked in for this conference. One credit is recorded per session.</div>
 
     <div class="signal-row">
-      <span class="chip" id="sig-gps">GPS · checking…</span>
+      <span class="chip info" id="sig-dev">Check-in linked to this device</span>
       <span class="chip info" id="sig-dev">Device · linked to your check-ins</span>
     </div>
 
@@ -545,7 +545,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
     </div>
 
     <div class="qr-holder"><div id="qrbox"></div></div>
-    <p class="pres-meta">SCAN TO OPEN CHECK-IN · QR CARRIES THE LIVE CODE<br>CODE ROTATES EVERY 15 SECONDS · UNIQUE PER CONFERENCE</p>
+    <p class="pres-meta">SCAN TO OPEN CHECK-IN · QR CARRIES THE LIVE CODE<br>CODE ROTATES EVERY 30 SECONDS · UNIQUE PER CONFERENCE</p>
   </div>
 
   <div class="card">
@@ -745,16 +745,32 @@ function call(fn){
       runner[fn].apply(runner, args);
     });
   }
-  return fetch(API_URL, {
+  return callWithRetry(fn, args, 1);
+}
+function callWithRetry(fn, args, attempt){
+  var url = API_URL + (API_URL.indexOf("?") < 0 ? "?" : "&") + "cb=" + Date.now();
+  return fetch(url, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" }, // simple request: no CORS preflight
+    cache: "no-store",
     body: JSON.stringify({ action: fn, args: args })
   }).then(function(r){
-    if (!r.ok) throw new Error("Network error (" + r.status + ")");
-    return r.json();
-  }).then(function(env){
-    if (!env.apiOk) throw new Error(env.error || "Server error");
+    if (!r.ok) throw { _transient: true, msg: "HTTP " + r.status };
+    return r.text();
+  }).then(function(txt){
+    var env;
+    try { env = JSON.parse(txt); }
+    catch(e){ throw { _transient: true, msg: "bad response" }; } // cold-start HTML error page
+    if (!env.apiOk) throw new Error(env.error || "Server error"); // real app error — do NOT retry
     return env.data;
+  }).catch(function(e){
+    // retry only transient transport failures (cold starts, blips): up to 3 tries
+    var transient = (e && e._transient) || (e instanceof TypeError);
+    if (transient && attempt < 3){
+      return new Promise(function(res){ setTimeout(res, attempt * 800); })
+        .then(function(){ return callWithRetry(fn, args, attempt + 1); });
+    }
+    throw (e && e.msg) ? new Error("Connection problem — please try again.") : e;
   });
 }
 var _toastT = null;
@@ -900,19 +916,7 @@ async function residentLookup(){
   renderLiveConf();
   document.getElementById("r-step1").classList.add("hide");
   document.getElementById("r-step2").classList.remove("hide");
-  requestGps();
   var fb = document.querySelector(".code-box"); if (fb) fb.focus();
-}
-var GPS = {lat:null, lng:null};
-function requestGps(){
-  var chip = document.getElementById("sig-gps");
-  if (!navigator.geolocation){ chip.textContent = "GPS · unavailable"; return; }
-  navigator.geolocation.getCurrentPosition(function(pos){
-    GPS.lat = pos.coords.latitude; GPS.lng = pos.coords.longitude;
-    chip.className = "chip ok"; chip.textContent = "GPS · location captured";
-  }, function(){
-    chip.className = "chip"; chip.textContent = "GPS · not shared";
-  }, {timeout:4000, maximumAge:60000});
 }
 var boxes = document.querySelectorAll(".code-box");
 boxes.forEach(function(b,i){
@@ -985,7 +989,7 @@ async function residentSubmit(){
   try{
     res = await call('checkIn', {
       email: currentResident.email, confId: liveNow.id, code: entered,
-      deviceId: deviceId(), lat: GPS.lat, lng: GPS.lng, track: chosenTrack
+      deviceId: deviceId(), track: chosenTrack
     });
   }catch(e){ codeErr.textContent = e.message; codeErr.style.display="block"; return; }
   if (!res.ok){
@@ -1057,7 +1061,8 @@ function residentReset(){
   document.getElementById("r-credits").classList.add("hide");
   document.getElementById("r-step1").classList.remove("hide");
 }
-function showQArea(){
+async function showQArea(){
+  try{ BOOT = await call('bootstrap'); }catch(e){}
   qOptions();
   if (currentResident) document.getElementById("q-email").value = currentResident.email;
   document.getElementById("r-step2").classList.add("hide");
@@ -1215,7 +1220,7 @@ function pFullscreen(){
 function startPresenterPolling(){
   stopPresenterPolling();
   pollPresenter();
-  presenterTimer = setInterval(pollPresenter, 5000);
+  presenterTimer = setInterval(pollPresenter, 4000);
 }
 function stopPresenterPolling(){
   if (presenterTimer){ clearInterval(presenterTimer); presenterTimer = null; }
@@ -1297,7 +1302,17 @@ function renderAdmin(){
   Object.keys(byDay).sort().forEach(function(day){
     var dLabel = new Date(day + "T12:00:00").toLocaleDateString(undefined, {weekday:"long", month:"short", day:"numeric"});
     var g = document.createElement("div"); g.className = "day-group";
-    g.innerHTML = '<div class="day-label">' + dLabel + '</div>';
+    var dl = document.createElement("div"); dl.className = "day-label";
+    dl.innerHTML = '<span>' + dLabel + '</span>';
+    var hol = document.createElement("button");
+    hol.className = "mini-btn"; hol.style.cssText = "margin-left:auto;font-size:10px";
+    hol.textContent = "Holiday — cancel day";
+    hol.onclick = (function(dayStr, label){ return function(){
+      if (confirm("Cancel ALL conferences on " + label + " (holiday)? Residents won't be able to check in that day."))
+        cancelDayUI(dayStr);
+    }; })(day, dLabel);
+    dl.appendChild(hol);
+    g.appendChild(dl);
     byDay[day].forEach(function(c){
       var cancelled = c.status === "Cancelled";
       var row = document.createElement("div");
@@ -1421,6 +1436,11 @@ function editRow(row, c){
   row.appendChild(f);
 }
 
+async function cancelDayUI(dayStr){
+  try{ var r = await call('cancelDay', TOKEN, dayStr); }catch(e){ toast(e.message); return; }
+  notify("Cancelled " + r.n + " conference(s) for the holiday.");
+  loadAdmin();
+}
 async function cancelUI(confId, makeQ){
   try{ await call('cancelConference', TOKEN, confId, makeQ); }catch(e){ toast(e.message); return; }
   notify("Cancelled — now accepting 10-question credit.");
