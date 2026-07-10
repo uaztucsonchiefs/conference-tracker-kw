@@ -1,12 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Conference Tracker · University of Arizona–Tucson Internal Medicine</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root{
   --bg:#F4F5F2;
@@ -26,9 +24,9 @@
   --adobe-tint:#F8EEE4;
   --brick:#A93B2A;
   --brick-tint:#F8EAE7;
-  --mono:'IBM Plex Mono',ui-monospace,monospace;
-  --sans:'IBM Plex Sans',system-ui,sans-serif;
-  --disp:'Archivo',var(--sans);
+  --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono',monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --disp:var(--sans);
   --shadow:0 1px 2px rgba(28,37,48,.05), 0 3px 12px rgba(28,37,48,.05);
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -75,6 +73,7 @@ h3{font-size:14px;font-weight:700;color:var(--dusk)}
 .btn{display:block;width:100%;border:none;border-radius:10px;cursor:pointer;font-family:var(--disp);
   font-weight:700;font-size:13.5px;letter-spacing:.01em;padding:13px;transition:all .14s}
 .btn:active{transform:scale(.99)}
+.btn:disabled{opacity:.68;cursor:wait;transform:none!important;box-shadow:none!important}
 .btn-primary{background:linear-gradient(180deg,#3a9268,#2a6f50);color:#fff;box-shadow:0 2px 8px rgba(42,111,80,.28)}
 .btn-primary:hover{box-shadow:0 4px 14px rgba(42,111,80,.36);transform:translateY(-1px)}
 .btn-ghost{background:var(--panel);border:1px solid var(--line);color:var(--muted);font-size:12.5px;padding:10px}
@@ -333,8 +332,8 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
     </div>
     <div class="msg err" id="r-email-err">No roster match for that email. Check the spelling, or contact a chief resident.</div>
     <div style="margin-top:12px">
-      <button class="btn btn-primary" onclick="residentLookup()">Continue</button>
-      <button class="btn btn-ghost" style="margin-top:8px" onclick="creditsLookup()">Look up my conference credits</button>
+      <button class="btn btn-primary" id="r-continue" onclick="residentLookup()">Continue</button>
+      <button class="btn btn-ghost" id="r-credits-btn" style="margin-top:8px" onclick="creditsLookup()">Look up my conference credits</button>
     </div>
   </div>
 
@@ -360,7 +359,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
         <div class="nm" id="r-name">—</div>
         <div class="cls" id="r-class">—</div>
       </div>
-      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="residentReset()">Not you?</button>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="residentReset(true)">Not you?</button>
     </div>
 
     <label class="fld">Now in session</label>
@@ -391,12 +390,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
     <div class="msg err" id="r-code-err">That code is incorrect or has expired. Check the current code on the room screen and try again.</div>
     <div class="msg warn" id="r-dupe-warn">You're already checked in for this conference. One credit is recorded per session.</div>
 
-    <div class="signal-row">
-      <span class="chip info" id="sig-dev">Check-in linked to this device</span>
-      <span class="chip info" id="sig-dev">Device · linked to your check-ins</span>
-    </div>
-
-    <button class="btn btn-primary" style="margin-top:12px" onclick="residentSubmit()">Check in</button>
+    <button class="btn btn-primary" id="r-checkin" style="margin-top:12px" onclick="residentSubmit()">Check in</button>
     <div class="divider"></div>
     <button class="btn btn-ghost" onclick="showQArea()">No conference? Submit practice question credit</button>
   </div>
@@ -418,7 +412,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
       <p class="sub" style="margin-top:8px;font-weight:600;color:var(--saguaro-d)">Hope you learned something — keep fighting the good fight!</p>
     </div>
     <div style="margin-top:15px">
-      <button class="btn btn-ghost" onclick="residentReset()">Done</button>
+      <button class="btn btn-ghost" onclick="residentReset(false)">Done</button>
     </div>
   </div>
 
@@ -735,24 +729,34 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
    Hosted on Vercel       -> fetches the Apps Script /exec URL as a JSON API.
    Set API_URL to your deployed /exec URL for Vercel hosting. */
 var API_URL = "https://script.google.com/macros/s/AKfycbxVZgKcY0zPh9EufKV3LlKgcyYmbE01xLeIoRZuslOEB9P4txFHLHLKqMvKaQmd_xXH/exec";
+var _inflight = {};
 function call(fn){
   var args = Array.prototype.slice.call(arguments, 1);
+  var dedupeKey = fn === "bootstrap" ? "bootstrap" : "";
+  if (dedupeKey && _inflight[dedupeKey]) return _inflight[dedupeKey];
+  var p;
   if (typeof google !== "undefined" && google.script && google.script.run){
-    return new Promise(function(ok, bad){
+    p = new Promise(function(ok, bad){
       var runner = google.script.run
         .withSuccessHandler(ok)
         .withFailureHandler(function(e){ bad(new Error(e && e.message ? e.message : 'Server error')); });
       runner[fn].apply(runner, args);
     });
+  } else {
+    p = callWithRetry(fn, args, 1);
   }
-  return callWithRetry(fn, args, 1);
+  if (dedupeKey){
+    _inflight[dedupeKey] = p;
+    p.then(function(){ delete _inflight[dedupeKey]; }, function(){ delete _inflight[dedupeKey]; });
+  }
+  return p;
 }
 function callWithRetry(fn, args, attempt){
-  var url = API_URL + (API_URL.indexOf("?") < 0 ? "?" : "&") + "cb=" + Date.now();
-  return fetch(url, {
+  return fetch(API_URL, {
     method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" }, // simple request: no CORS preflight
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
     cache: "no-store",
+    keepalive: true,
     body: JSON.stringify({ action: fn, args: args })
   }).then(function(r){
     if (!r.ok) throw { _transient: true, msg: "HTTP " + r.status };
@@ -760,14 +764,13 @@ function callWithRetry(fn, args, attempt){
   }).then(function(txt){
     var env;
     try { env = JSON.parse(txt); }
-    catch(e){ throw { _transient: true, msg: "bad response" }; } // cold-start HTML error page
-    if (!env.apiOk) throw new Error(env.error || "Server error"); // real app error — do NOT retry
+    catch(e){ throw { _transient: true, msg: "bad response" }; }
+    if (!env.apiOk) throw new Error(env.error || "Server error");
     return env.data;
   }).catch(function(e){
-    // retry only transient transport failures (cold starts, blips): up to 3 tries
     var transient = (e && e._transient) || (e instanceof TypeError);
-    if (transient && attempt < 3){
-      return new Promise(function(res){ setTimeout(res, attempt * 800); })
+    if (transient && attempt < 2){
+      return new Promise(function(res){ setTimeout(res, 300); })
         .then(function(){ return callWithRetry(fn, args, attempt + 1); });
     }
     throw (e && e.msg) ? new Error("Connection problem — please try again.") : e;
@@ -785,6 +788,8 @@ function notify(msg){ toast(msg, false); }
 
 /* ============ STATE ============ */
 var BOOT = null;              /* bootstrap payload */
+var BOOT_TS = 0;
+var BOOT_CACHE_MS = 60000;
 var currentResident = null;   /* {first,last,pgy,email} */
 var TOKEN = sessionStorage.getItem('trk_token') || null;
 var presenterConf = null;
@@ -816,6 +821,39 @@ function deviceId(){
   var d = localStorage.getItem('trk_device');
   if (!d){ d = 'dev-' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('trk_device', d); }
   return d;
+}
+function localDay(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function rememberBoot(data){
+  if (!data) return;
+  BOOT = data; BOOT_TS = Date.now();
+  try{ localStorage.setItem('trk_boot', JSON.stringify({day:localDay(), ts:BOOT_TS, data:data})); }catch(e){}
+}
+function restoreBoot(){
+  try{
+    var x = JSON.parse(localStorage.getItem('trk_boot') || 'null');
+    if (x && x.day === localDay() && x.data){ BOOT = x.data; BOOT_TS = Number(x.ts)||0; return true; }
+  }catch(e){}
+  return false;
+}
+function bootIsFresh(maxAge){ return !!BOOT && (Date.now() - BOOT_TS) < (maxAge || BOOT_CACHE_MS); }
+function refreshBoot(force){
+  if (!force && bootIsFresh()) return Promise.resolve(BOOT);
+  return call('bootstrap').then(function(data){ rememberBoot(data); qOptions(); return data; });
+}
+function rememberResident(email, hit){
+  try{ localStorage.setItem('trk_email', email); localStorage.setItem('trk_resident_' + email, JSON.stringify({ts:Date.now(), first:hit.first, last:hit.last, pgy:hit.pgy})); }catch(e){}
+}
+function restoreResident(email){
+  try{
+    var x = JSON.parse(localStorage.getItem('trk_resident_' + email) || 'null');
+    if (x && Date.now() - x.ts < 2592000000) return x;
+  }catch(e){}
+  return null;
+}
+function setBusy(id, busy, busyText){
+  var b = document.getElementById(id); if (!b) return;
+  if (!b.dataset.label) b.dataset.label = b.textContent;
+  b.disabled = !!busy; b.textContent = busy ? busyText : b.dataset.label;
 }
 
 /* ============ CLOCK ============ */
@@ -881,25 +919,22 @@ document.addEventListener("keydown", function(e){
 });
 
 /* ============ BOOTSTRAP ============ */
-async function boot(){
+function boot(){
   renderTabs("resident");
-  try{ BOOT = await call('bootstrap'); }
-  catch(e){ BOOT = {todayConfs:[], liveConf:null, qEligible:[], webAppUrl:''}; }
+  restoreBoot();
+  if (!BOOT) BOOT = {todayConfs:[], liveConfs:[], liveConf:null, qEligible:[], webAppUrl:''};
   qOptions();
+  var savedEmail = localStorage.getItem('trk_email') || '';
+  if (savedEmail) document.getElementById('r-email').value = savedEmail;
+  // Warm Apps Script while the resident types, rather than delaying first paint.
+  var warm = function(){ refreshBoot(false).catch(function(){}); };
+  document.getElementById('r-email').addEventListener('focus', warm, {once:true});
+  document.getElementById('r-continue').addEventListener('pointerdown', warm, {once:true});
 }
 
 /* ============ RESIDENT FLOW ============ */
-async function residentLookup(){
-  var em = document.getElementById("r-email").value.trim().toLowerCase();
-  var err = document.getElementById("r-email-err");
-  if (!em || em.indexOf("@")<1){ err.style.display="block"; return; }
-  var hit;
-  try{ hit = await call('residentStart', em); }
-  catch(e){ err.textContent = e.message; err.style.display="block"; return; }
-  if (!hit.found){ err.style.display="block"; return; }
-  err.style.display="none";
+function showResident(hit, em){
   currentResident = {first:hit.first, last:hit.last, pgy:hit.pgy, email:em};
-  if (hit.boot) BOOT = hit.boot;
   document.getElementById("r-avatar").textContent = hit.first[0]+hit.last[0];
   document.getElementById("r-name").textContent = hit.first+" "+hit.last;
   document.getElementById("r-class").textContent = "PGY-"+hit.pgy+" · ROSTER MATCH";
@@ -917,6 +952,44 @@ async function residentLookup(){
   document.getElementById("r-step1").classList.add("hide");
   document.getElementById("r-step2").classList.remove("hide");
   var fb = document.querySelector(".code-box"); if (fb) fb.focus();
+}
+async function residentLookup(){
+  var em = document.getElementById("r-email").value.trim().toLowerCase();
+  var err = document.getElementById("r-email-err");
+  if (!em || em.indexOf("@")<1){ err.style.display="block"; return; }
+  err.style.display="none";
+  setBusy('r-continue', true, 'Opening…');
+
+  var cached = restoreResident(em);
+  if (cached && BOOT_TS){
+    showResident(cached, em);
+    setBusy('r-continue', false, 'Opening…');
+    // Revalidate identity and schedule in the background; checkIn also validates server-side.
+    call('residentStart', em, !bootIsFresh(20000)).then(function(hit){
+      if (!hit.found) return;
+      if (hit.boot) rememberBoot(hit.boot);
+      rememberResident(em, hit);
+      if (currentResident && currentResident.email === em) showResident(hit, em);
+    }).catch(function(){});
+    return;
+  }
+
+  try{
+    var hit;
+    // If the schedule warm-up is already running, reuse it and do only the small roster lookup.
+    if (!bootIsFresh(20000) && _inflight.bootstrap){
+      var pair = await Promise.all([call('lookupResident', em), _inflight.bootstrap.catch(function(){ return null; })]);
+      hit = pair[0];
+      if (pair[1]) rememberBoot(pair[1]);
+    } else {
+      hit = await call('residentStart', em, !bootIsFresh(20000));
+      if (hit.boot) rememberBoot(hit.boot);
+    }
+    if (!hit.found){ err.style.display="block"; return; }
+    rememberResident(em, hit);
+    showResident(hit, em);
+  }catch(e){ err.textContent = e.message; err.style.display="block"; }
+  finally{ setBusy('r-continue', false, 'Opening…'); }
 }
 var boxes = document.querySelectorAll(".code-box");
 boxes.forEach(function(b,i){
@@ -986,12 +1059,14 @@ async function residentSubmit(){
   var dupeWarn = document.getElementById("r-dupe-warn");
   codeErr.style.display="none"; dupeWarn.style.display="none";
   var res;
+  setBusy('r-checkin', true, 'Recording…');
   try{
     res = await call('checkIn', {
       email: currentResident.email, confId: liveNow.id, code: entered,
       deviceId: deviceId(), track: chosenTrack
     });
-  }catch(e){ codeErr.textContent = e.message; codeErr.style.display="block"; return; }
+  }catch(e){ codeErr.textContent = e.message; codeErr.style.display="block"; setBusy('r-checkin', false, 'Recording…'); return; }
+  setBusy('r-checkin', false, 'Recording…');
   if (!res.ok){
     if (res.reason==="dupe"){ dupeWarn.style.display="block"; return; }
     boxes.forEach(function(b){ b.classList.add("err"); });
@@ -1021,8 +1096,10 @@ async function creditsLookup(){
     err.style.display="block"; return;
   }
   var r;
+  setBusy('r-credits-btn', true, 'Loading…');
   try{ r = await call('myCredits', em); }
   catch(e){ err.textContent = e.message; err.style.display="block"; return; }
+  finally{ setBusy('r-credits-btn', false, 'Loading…'); }
   if (!r.found){
     err.textContent = "No roster match for that email. Check the spelling, or contact a chief resident.";
     err.style.display="block"; return;
@@ -1051,9 +1128,15 @@ function creditsBack(){
   document.getElementById("r-credits").classList.add("hide");
   document.getElementById("r-step1").classList.remove("hide");
 }
-function residentReset(){
+function residentReset(clearIdentity){
   currentResident = null;
-  document.getElementById("r-email").value = "";
+  if (clearIdentity){
+    var oldEmail = document.getElementById("r-email").value.trim().toLowerCase();
+    try{ localStorage.removeItem('trk_email'); if (oldEmail) localStorage.removeItem('trk_resident_' + oldEmail); }catch(e){}
+    document.getElementById("r-email").value = "";
+  } else {
+    document.getElementById("r-email").value = localStorage.getItem('trk_email') || "";
+  }
   boxes.forEach(function(b){ b.value=""; });
   document.getElementById("r-step2").classList.add("hide");
   document.getElementById("r-step3").classList.add("hide");
@@ -1062,7 +1145,7 @@ function residentReset(){
   document.getElementById("r-step1").classList.remove("hide");
 }
 async function showQArea(){
-  try{ BOOT = await call('bootstrap'); }catch(e){}
+  try{ await refreshBoot(false); }catch(e){}
   qOptions();
   if (currentResident) document.getElementById("q-email").value = currentResident.email;
   document.getElementById("r-step2").classList.add("hide");
@@ -1164,9 +1247,22 @@ function qReset(){
   qImage = null;
 }
 
+var _qrLoad = null;
+function ensureQrLib(){
+  if (window.QRCode) return Promise.resolve();
+  if (_qrLoad) return _qrLoad;
+  _qrLoad = new Promise(function(resolve, reject){
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    s.async = true; s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+  return _qrLoad;
+}
+
 /* ============ PRESENTER ============ */
 async function renderTodayButtons(){
-  try{ BOOT = await call('bootstrap'); }catch(e){}
+  try{ await refreshBoot(true); }catch(e){}
   var holder = document.getElementById("p-today");
   holder.innerHTML = "";
   var confs = (BOOT.todayConfs||[]).filter(function(c){ return c.time !== "—" && c.status !== "Cancelled"; });
@@ -1246,9 +1342,13 @@ async function pollPresenter(){
     lastCode = st.code;
     var box = document.getElementById("qrbox");
     box.innerHTML = "";
-    if (window.QRCode && BOOT.webAppUrl){
-      new QRCode(box, {text: BOOT.webAppUrl, width:145, height:145,
-        colorDark:"#2A6F50", colorLight:"#ffffff", correctLevel:QRCode.CorrectLevel.M});
+    if (BOOT.webAppUrl){
+      ensureQrLib().then(function(){
+        if (!box.isConnected) return;
+        box.innerHTML = "";
+        new QRCode(box, {text: BOOT.webAppUrl, width:145, height:145,
+          colorDark:"#2A6F50", colorLight:"#ffffff", correctLevel:QRCode.CorrectLevel.M});
+      }).catch(function(){});
     }
   }
   var end = Date.now() + st.msLeft;
