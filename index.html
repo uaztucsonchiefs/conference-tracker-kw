@@ -6,7 +6,7 @@
 <title>Conference Tracker · University of Arizona–Tucson Internal Medicine</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root{
   --bg:#F4F5F2;
@@ -185,7 +185,10 @@ label.fld{display:block;font-size:11px;font-weight:700;color:var(--muted);letter
 .ring .fgc{stroke:var(--saguaro);fill:none;stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset .2s linear}
 .ring-label{font-family:var(--mono);font-size:12px;font-weight:600;fill:var(--muted);transform:rotate(90deg);transform-origin:37px 37px;text-anchor:middle;dominant-baseline:central}
 .qr-holder{display:flex;justify-content:center;margin:12px 0 8px}
-#qrbox{background:#fff;padding:11px;border-radius:11px;border:1px solid var(--line)}
+#qrbox{background:#fff;padding:11px;border-radius:11px;border:1px solid var(--line);min-width:169px;min-height:169px;display:flex;align-items:center;justify-content:center}
+#qrbox canvas,#qrbox img{display:block}
+.qr-wait{width:145px;height:145px;display:flex;align-items:center;justify-content:center;text-align:center;font-family:var(--mono);font-size:10px;line-height:1.6;color:var(--faint);padding:12px}
+.qr-wait a{color:var(--saguaro-d);font-weight:700;text-decoration:none}
 .pres-meta{text-align:center;font-family:var(--mono);font-size:10px;color:var(--faint);letter-spacing:.06em;line-height:1.8}
 .feed{list-style:none;margin-top:8px}
 .feed li{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line-soft);font-size:13px;animation:vin .22s ease}
@@ -333,7 +336,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
     </div>
     <div class="msg err" id="r-email-err">No roster match for that email. Check the spelling, or contact a chief resident.</div>
     <div style="margin-top:12px">
-      <button class="btn btn-primary" onclick="residentLookup()">Continue</button>
+      <button class="btn btn-primary" id="r-continue-btn" onclick="residentLookup()">Continue</button>
       <button class="btn btn-ghost" style="margin-top:8px" onclick="creditsLookup()">Look up my conference credits</button>
     </div>
   </div>
@@ -360,7 +363,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
         <div class="nm" id="r-name">—</div>
         <div class="cls" id="r-class">—</div>
       </div>
-      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="residentReset()">Not you?</button>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="residentReset(true)">Not you?</button>
     </div>
 
     <label class="fld">Now in session</label>
@@ -391,12 +394,8 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
     <div class="msg err" id="r-code-err">That code is incorrect or has expired. Check the current code on the room screen and try again.</div>
     <div class="msg warn" id="r-dupe-warn">You're already checked in for this conference. One credit is recorded per session.</div>
 
-    <div class="signal-row">
-      <span class="chip info" id="sig-dev">Check-in linked to this device</span>
-      <span class="chip info" id="sig-dev">Device · linked to your check-ins</span>
-    </div>
 
-    <button class="btn btn-primary" style="margin-top:12px" onclick="residentSubmit()">Check in</button>
+    <button class="btn btn-primary" id="r-checkin-btn" style="margin-top:12px" onclick="residentSubmit()">Check in</button>
     <div class="divider"></div>
     <button class="btn btn-ghost" onclick="showQArea()">No conference? Submit practice question credit</button>
   </div>
@@ -418,7 +417,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
       <p class="sub" style="margin-top:8px;font-weight:600;color:var(--saguaro-d)">Hope you learned something — keep fighting the good fight!</p>
     </div>
     <div style="margin-top:15px">
-      <button class="btn btn-ghost" onclick="residentReset()">Done</button>
+      <button class="btn btn-ghost" onclick="residentReset(false)">Done</button>
     </div>
   </div>
 
@@ -545,7 +544,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
     </div>
 
     <div class="qr-holder"><div id="qrbox"></div></div>
-    <p class="pres-meta">SCAN TO OPEN CHECK-IN · QR CARRIES THE LIVE CODE<br>CODE ROTATES EVERY 30 SECONDS · UNIQUE PER CONFERENCE</p>
+    <p class="pres-meta">SCAN TO OPEN CHECK-IN · CONFERENCE + CODE FILL AUTOMATICALLY<br>CODE ROTATES EVERY 30 SECONDS · UNIQUE PER CONFERENCE</p>
   </div>
 
   <div class="card">
@@ -782,6 +781,22 @@ function toast(msg, isErr){
   _toastT = setTimeout(function(){ t.className = ""; }, 3800);
 }
 function notify(msg){ toast(msg, false); }
+function setBusy(id, busy, busyText){
+  var b = document.getElementById(id);
+  if (!b) return;
+  if (busy){
+    b.dataset.oldText = b.textContent;
+    b.textContent = busyText || "Working…";
+    b.disabled = true;
+    b.style.opacity = ".72";
+    b.style.cursor = "wait";
+  } else {
+    b.textContent = b.dataset.oldText || b.textContent;
+    b.disabled = false;
+    b.style.opacity = "";
+    b.style.cursor = "";
+  }
+}
 
 /* ============ STATE ============ */
 var BOOT = null;              /* bootstrap payload */
@@ -790,6 +805,14 @@ var TOKEN = sessionStorage.getItem('trk_token') || null;
 var presenterConf = null;
 var presenterTimer = null;
 var ADMIN_DATA = null;
+var qrRetryTimer = null;
+var lastQrText = "";
+var qrFallbackRequested = false;
+var _deepParams = new URLSearchParams(window.location.search);
+var DEEP_LINK = {
+  confId: _deepParams.get("conf") || "",
+  code: String(_deepParams.get("code") || "").replace(/\D/g, "").slice(0, 4)
+};
 var weekStart = mondayOf(new Date());
 function mondayOf(d){
   d = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -883,6 +906,12 @@ document.addEventListener("keydown", function(e){
 /* ============ BOOTSTRAP ============ */
 async function boot(){
   renderTabs("resident");
+  var savedEmail = localStorage.getItem('trk_email') || '';
+  if (savedEmail) document.getElementById("r-email").value = savedEmail;
+  if (DEEP_LINK.confId && DEEP_LINK.code.length === 4){
+    var intro = document.querySelector("#r-step1 .sub");
+    if (intro) intro.textContent = "Live conference link detected. Enter your program email to continue; the conference and room code will fill automatically.";
+  }
   try{ BOOT = await call('bootstrap'); }
   catch(e){ BOOT = {todayConfs:[], liveConf:null, qEligible:[], webAppUrl:''}; }
   qOptions();
@@ -894,12 +923,15 @@ async function residentLookup(){
   var err = document.getElementById("r-email-err");
   if (!em || em.indexOf("@")<1){ err.style.display="block"; return; }
   var hit;
-  try{ hit = await call('lookupResident', em); }
-  catch(e){ err.textContent = e.message; err.style.display="block"; return; }
+  setBusy("r-continue-btn", true, "Matching roster…");
+  try{ hit = await call('residentStart', em); }
+  catch(e){ err.textContent = e.message; err.style.display="block"; setBusy("r-continue-btn", false); return; }
+  setBusy("r-continue-btn", false);
   if (!hit.found){ err.style.display="block"; return; }
   err.style.display="none";
   currentResident = {first:hit.first, last:hit.last, pgy:hit.pgy, email:em};
-  try{ BOOT = await call('bootstrap'); }catch(e){}
+  localStorage.setItem('trk_email', em);
+  if (hit.boot) BOOT = hit.boot;
   document.getElementById("r-avatar").textContent = hit.first[0]+hit.last[0];
   document.getElementById("r-name").textContent = hit.first+" "+hit.last;
   document.getElementById("r-class").textContent = "PGY-"+hit.pgy+" · ROSTER MATCH";
@@ -913,7 +945,13 @@ async function residentLookup(){
     sel.appendChild(o);
   });
   sel.classList.toggle("hide", lcs.length < 2);
+  if (DEEP_LINK.confId && lcs.some(function(c){ return c.id === DEEP_LINK.confId; })){
+    sel.value = DEEP_LINK.confId;
+  }
   renderLiveConf();
+  if (DEEP_LINK.code.length === 4){
+    DEEP_LINK.code.split("").forEach(function(ch, i){ if (boxes[i]) boxes[i].value = ch; });
+  }
   document.getElementById("r-step1").classList.add("hide");
   document.getElementById("r-step2").classList.remove("hide");
   var fb = document.querySelector(".code-box"); if (fb) fb.focus();
@@ -985,13 +1023,25 @@ async function residentSubmit(){
   var codeErr = document.getElementById("r-code-err");
   var dupeWarn = document.getElementById("r-dupe-warn");
   codeErr.style.display="none"; dupeWarn.style.display="none";
+  var payload = {
+    email: currentResident.email, confId: liveNow.id, code: entered,
+    deviceId: deviceId(), track: chosenTrack
+  };
   var res;
+  setBusy("r-checkin-btn", true, "Recording attendance…");
   try{
-    res = await call('checkIn', {
-      email: currentResident.email, confId: liveNow.id, code: entered,
-      deviceId: deviceId(), track: chosenTrack
-    });
-  }catch(e){ codeErr.textContent = e.message; codeErr.style.display="block"; return; }
+    res = await call('checkIn', payload);
+    // A busy response means another write briefly held the sheet lock. Retry
+    // transparently rather than making the resident re-enter the code.
+    if (res && !res.ok && res.reason === "busy"){
+      await new Promise(function(resolve){ setTimeout(resolve, 650); });
+      res = await call('checkIn', payload);
+    }
+  }catch(e){
+    setBusy("r-checkin-btn", false);
+    codeErr.textContent = e.message; codeErr.style.display="block"; return;
+  }
+  setBusy("r-checkin-btn", false);
   if (!res.ok){
     if (res.reason==="dupe"){ dupeWarn.style.display="block"; return; }
     boxes.forEach(function(b){ b.classList.add("err"); });
@@ -1000,6 +1050,8 @@ async function residentSubmit(){
       ? "This conference isn't available for check-in."
       : res.reason==="notToday"
       ? "That conference isn't scheduled for today."
+      : res.reason==="busy"
+      ? "The attendance log is handling a large check-in burst. Tap Check in once more."
       : "That code is incorrect or has expired. Check the current code on the room screen and try again.";
     codeErr.style.display="block"; return;
   }
@@ -1051,9 +1103,14 @@ function creditsBack(){
   document.getElementById("r-credits").classList.add("hide");
   document.getElementById("r-step1").classList.remove("hide");
 }
-function residentReset(){
+function residentReset(clearIdentity){
   currentResident = null;
-  document.getElementById("r-email").value = "";
+  if (clearIdentity){
+    localStorage.removeItem('trk_email');
+    document.getElementById("r-email").value = "";
+  } else {
+    document.getElementById("r-email").value = localStorage.getItem('trk_email') || "";
+  }
   boxes.forEach(function(b){ b.value=""; });
   document.getElementById("r-step2").classList.add("hide");
   document.getElementById("r-step3").classList.add("hide");
@@ -1202,6 +1259,41 @@ async function pickSession(id){
   startPresenterPolling();
 }
 var lastCode = "", ringAnim = null;
+function presenterQrUrl_(confId, code){
+  var base = (BOOT && BOOT.webAppUrl) ? BOOT.webAppUrl : (window.location.origin + window.location.pathname);
+  var sep = base.indexOf("?") === -1 ? "?" : "&";
+  return base + sep + "conf=" + encodeURIComponent(confId) + "&code=" + encodeURIComponent(code);
+}
+function requestQrFallback_(){
+  if (qrFallbackRequested || window.QRCode) return;
+  qrFallbackRequested = true;
+  var sc = document.createElement("script");
+  sc.id = "qr-fallback-lib";
+  sc.src = "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js";
+  sc.onload = function(){ if (lastQrText) renderPresenterQr_(lastQrText); };
+  sc.onerror = function(){ qrFallbackRequested = false; };
+  document.head.appendChild(sc);
+}
+function renderPresenterQr_(text){
+  var box = document.getElementById("qrbox");
+  if (!box) return;
+  if (qrRetryTimer){ clearTimeout(qrRetryTimer); qrRetryTimer = null; }
+  if (window.QRCode){
+    box.innerHTML = "";
+    try{
+      new QRCode(box, {text:text, width:145, height:145, colorDark:"#2A6F50", colorLight:"#ffffff",
+        correctLevel:(QRCode.CorrectLevel ? QRCode.CorrectLevel.M : undefined)});
+      box.setAttribute("aria-label", "QR code for live conference check-in");
+      return;
+    }catch(e){}
+  }
+  requestQrFallback_();
+  box.innerHTML = '<div class="qr-wait">Loading QR code…<br><br><a href="' + text.replace(/"/g, "&quot;") + '" target="_blank" rel="noopener">Open check-in link</a></div>';
+  qrRetryTimer = setTimeout(function(){
+    if (lastQrText === text) renderPresenterQr_(text);
+  }, 700);
+}
+
 async function pClose(){
   if (!presenterConf) return;
   try{ await call('closeConference', TOKEN, presenterConf); }catch(e){ toast(e.message); return; }
@@ -1220,11 +1312,12 @@ function pFullscreen(){
 function startPresenterPolling(){
   stopPresenterPolling();
   pollPresenter();
-  presenterTimer = setInterval(pollPresenter, 4000);
+  presenterTimer = setInterval(pollPresenter, 10000);
 }
 function stopPresenterPolling(){
   if (presenterTimer){ clearInterval(presenterTimer); presenterTimer = null; }
   if (ringAnim){ clearInterval(ringAnim); ringAnim = null; }
+  if (qrRetryTimer){ clearTimeout(qrRetryTimer); qrRetryTimer = null; }
 }
 async function pollPresenter(){
   if (!presenterConf) return;
@@ -1242,14 +1335,13 @@ async function pollPresenter(){
     var d = holder.children[i];
     if (d.textContent !== ch){ d.textContent = ch; if (changed){ d.classList.add("tick"); setTimeout(function(){ d.classList.remove("tick"); }, 220); } }
   });
-  if (changed){
-    lastCode = st.code;
-    var box = document.getElementById("qrbox");
-    box.innerHTML = "";
-    if (window.QRCode && BOOT.webAppUrl){
-      new QRCode(box, {text: BOOT.webAppUrl, width:145, height:145,
-        colorDark:"#2A6F50", colorLight:"#ffffff", correctLevel:QRCode.CorrectLevel.M});
-    }
+  if (changed) lastCode = st.code;
+  var qrText = presenterQrUrl_(presenterConf, st.code);
+  var qrBox = document.getElementById("qrbox");
+  var qrMissing = !qrBox || (!qrBox.querySelector("canvas") && !qrBox.querySelector("img"));
+  if (qrText !== lastQrText || qrMissing){
+    lastQrText = qrText;
+    renderPresenterQr_(qrText);
   }
   var end = Date.now() + st.msLeft;
   if (ringAnim) clearInterval(ringAnim);
