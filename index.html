@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -222,6 +223,10 @@ label.fld{display:block;font-size:11px;font-weight:700;color:var(--muted);letter
 .flag-item .fr{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .flag-item .who{font-weight:700;font-size:13px}
 .flag-item .why{font-family:var(--mono);font-size:10px;color:var(--adobe);margin-top:4px;letter-spacing:.02em;line-height:1.7}
+.review-shots{display:flex;flex-wrap:wrap;gap:8px;margin:9px 0 2px}
+.review-shot{max-width:116px;max-height:150px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);transition:opacity .25s;display:block}
+.shot-link{display:inline-block;line-height:0}
+.shot-link.shot-fallback{line-height:normal;font-family:var(--mono);font-size:10px;color:var(--saguaro-d);text-decoration:none;border-bottom:1px solid #CBE0D2}
 .qbtns{display:flex;gap:8px;margin-top:9px}
 .qbtn{flex:1;border-radius:7px;border:1px solid var(--line);background:var(--panel);color:var(--muted);
   font-size:11.5px;font-weight:700;padding:8px;cursor:pointer}
@@ -262,6 +267,12 @@ table.roster-tbl{width:100%;border-collapse:collapse;font-size:12.5px;margin-top
 .dropzone.has{border-color:var(--saguaro);border-style:solid;background:var(--saguaro-tint)}
 .file-chip{display:flex;align-items:center;gap:9px;background:var(--saguaro-tint);border:1px solid #CBE0D2;
   border-radius:9px;padding:10px 12px;margin:10px 0;font-family:var(--mono);font-size:11.5px;color:var(--saguaro-d)}
+.file-chip .fx-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-chip .fx-size{margin-left:auto;color:var(--muted);flex-shrink:0;white-space:nowrap}
+.file-chip .rm{border:none;background:transparent;color:var(--saguaro-d);cursor:pointer;font-size:16px;line-height:1;padding:0 3px;flex-shrink:0;opacity:.55}
+.file-chip .rm:hover{opacity:1}
+#q-files{margin:10px 0}
+#q-files .file-chip{margin:7px 0}
 .attest{display:flex;gap:11px;align-items:flex-start;margin:14px 0;font-size:12px;color:var(--muted);line-height:1.55;cursor:pointer}
 .attest input{accent-color:var(--saguaro-d);width:18px;height:18px;margin-top:1px;flex-shrink:0}
 .reply-prev{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:13px;font-size:12.5px;color:var(--muted);line-height:1.65;margin-top:12px}
@@ -360,7 +371,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
         <div class="nm" id="r-name">—</div>
         <div class="cls" id="r-class">—</div>
       </div>
-      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="residentReset()">Not you?</button>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="residentNotMe()">Not you?</button>
     </div>
 
     <label class="fld">Now in session</label>
@@ -393,7 +404,6 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
 
     <div class="signal-row">
       <span class="chip info" id="sig-dev">Check-in linked to this device</span>
-      <span class="chip info" id="sig-dev">Device · linked to your check-ins</span>
     </div>
 
     <button class="btn btn-primary" style="margin-top:12px" onclick="residentSubmit()">Check in</button>
@@ -439,11 +449,11 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
     <input type="email" id="q-email" placeholder="you@arizona.edu" inputmode="email">
 
     <div class="dropzone" id="q-drop" onclick="document.getElementById('q-fileinput').click()">
-      <div class="dz-t">Add completion screenshot</div>
-      <div class="dz-s">PNG · JPG — COMPRESSED ON YOUR PHONE FOR A FAST UPLOAD, THEN FILED TO DRIVE BY RESIDENT AND DATE</div>
+      <div class="dz-t">Add completion screenshot(s)</div>
+      <div class="dz-s">PNG · JPG — ADD ONE OR MORE · COMPRESSED ON YOUR PHONE FOR A FAST UPLOAD, THEN FILED TO DRIVE BY RESIDENT AND DATE</div>
     </div>
-    <input type="file" id="q-fileinput" accept="image/png,image/jpeg,image/webp" hidden onchange="qFilePicked(this)">
-    <div class="file-chip hide" id="q-file"><span id="q-fname">—</span><span style="margin-left:auto" id="q-fsize">—</span></div>
+    <input type="file" id="q-fileinput" accept="image/png,image/jpeg,image/webp" hidden multiple onchange="qFilePicked(this)">
+    <div id="q-files"></div>
 
     <label class="attest">
       <input type="checkbox" id="q-attest">
@@ -455,7 +465,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
 
     <div class="verify-box hide" id="q-verifying">
       <div class="spinner"></div>
-      <div class="vt">Reviewing your screenshot for clear proof of 10 completed questions…</div>
+      <div class="vt">Uploading your submission…</div>
     </div>
   </div>
 
@@ -561,12 +571,6 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
     <span class="mono" style="font-size:11px;color:var(--muted)">uaztucsonchiefs@gmail.com</span>
     <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="doLogout()">Sign out</button>
   </div>
-  <div class="stat-row">
-    <div class="stat"><div class="n" id="a-present">0</div><div class="l">Present</div></div>
-    <div class="stat sky"><div class="n" id="a-qcredit">0</div><div class="l">Q-Credits</div></div>
-    <div class="stat adobe"><div class="n" id="a-flagged">0</div><div class="l">Flagged</div></div>
-    <div class="stat"><div class="n" id="a-confs">0</div><div class="l">This Week</div></div>
-  </div>
 
   <div class="card">
     <div class="eyebrow">Schedule</div>
@@ -578,6 +582,13 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
     </div>
     <p class="sub" style="margin-bottom:10px;font-size:12px">One week at a time — each listing has its own code, QR, and log, and maps 1-to-1 to an NI entry. Edit changes title, time, site, credit, or Q-eligibility in place.</p>
     <div id="a-week"></div>
+  </div>
+
+  <div class="card">
+    <div class="eyebrow">Clean up duplicate listings</div>
+    <p class="sub">Finds listings that repeat the same date, type, title, and site. Removing them only ever deletes <strong>empty</strong> copies — any copy with recorded check-ins is kept, and at least one copy of every offering survives. Resident sign-ins are never touched.</p>
+    <button class="btn btn-ghost" style="margin-top:10px" onclick="scanDuplicates()">Scan for duplicates</button>
+    <div id="dup-out"></div>
   </div>
 
   <div class="card">
@@ -600,7 +611,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
       </div>
     </div>
     <label class="fld">Site</label>
-    <select id="add-site"><option>BUMCT</option><option>South</option><option>VA</option><option value="">—</option></select>
+    <select id="add-site"><option>All Sites</option><option>BUMCT</option><option>South</option><option>VA</option><option value="">—</option></select>
     <label class="fld">Title</label>
     <input type="text" id="add-title" placeholder="e.g., Evening Journal Club — PE Risk Stratification">
     <div class="grid-2">
@@ -664,6 +675,7 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
 
   <div class="card">
     <div class="eyebrow" style="color:var(--adobe)">Review queue</div>
+    <p class="sub" style="margin-bottom:10px">Q-credit submissions and any flagged check-ins land here — each shows its uploaded screenshot(s) as a thumbnail (tap to open full size). <strong>Approve</strong> keeps credit; <strong>Deny</strong> removes it.</p>
     <div id="a-flags"></div>
     <p class="sub hide" id="a-noflags" style="text-align:center;padding:6px 0">No entries awaiting review.</p>
   </div>
@@ -791,6 +803,9 @@ function toast(msg, isErr){
   _toastT = setTimeout(function(){ t.className = ""; }, 3800);
 }
 function notify(msg){ toast(msg, false); }
+/* Program-wide conferences carry the pseudo-site "All Sites" — a marker, not a
+ * real location — so hide it in the UI. Real sites (BUMCT/VA/South) still show. */
+function siteTag(s){ return (s && s !== 'All Sites') ? s : ''; }
 
 /* ============ STATE ============ */
 var BOOT = null;              /* bootstrap payload */
@@ -818,7 +833,8 @@ function inWindow(dateStr, backDays, fwdDays){
   var diff = (d - t) / 86400000;
   return diff >= -backDays && diff <= fwdDays;
 }
-var qImage = null;
+var qImages = [];      // [{id, name, pending, b64, mediaType, sizeLabel}]
+var qImgSeq = 0;
 var _IMP = [];
 
 function deviceId(){
@@ -826,6 +842,13 @@ function deviceId(){
   if (!d){ d = 'dev-' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('trk_device', d); }
   return d;
 }
+
+/* Remember the resident's email so they don't retype it each visit. Wrapped in
+ * try/catch: if storage is unavailable (private mode, disabled), remembering is
+ * silently skipped and login still works exactly as before. */
+function rememberEmail(em){ try{ if (em) localStorage.setItem('trk_email', em); }catch(e){} }
+function recalledEmail(){ try{ return localStorage.getItem('trk_email') || ''; }catch(e){ return ''; } }
+function forgetEmail(){ try{ localStorage.removeItem('trk_email'); }catch(e){} }
 
 /* ============ CLOCK ============ */
 function tickClock(){
@@ -894,6 +917,11 @@ async function boot(){
   console.log("Conference Tracker front-end · build " + APP_VERSION);
   var bs = document.getElementById("build-stamp");
   if (bs) bs.textContent = "BUILD " + APP_VERSION;
+  var savedEmail = recalledEmail();
+  if (savedEmail){
+    var re = document.getElementById("r-email"); if (re && !re.value) re.value = savedEmail;
+    var qe = document.getElementById("q-email"); if (qe && !qe.value) qe.value = savedEmail;
+  }
   renderTabs("resident");
   try{ BOOT = await call('bootstrap'); }
   catch(e){ BOOT = {todayConfs:[], liveConf:null, qEligible:[], webAppUrl:''}; }
@@ -910,6 +938,7 @@ async function residentLookup(){
   catch(e){ err.textContent = e.message; err.style.display="block"; return; }
   if (!hit.found){ err.style.display="block"; return; }
   err.style.display="none";
+  rememberEmail(em);
   currentResident = {first:hit.first, last:hit.last, pgy:hit.pgy, email:em};
   try{ BOOT = await call('bootstrap'); }catch(e){}
   document.getElementById("r-avatar").textContent = hit.first[0]+hit.last[0];
@@ -921,7 +950,7 @@ async function residentLookup(){
   lcs.forEach(function(c){
     var o = document.createElement("option");
     o.value = c.id;
-    o.textContent = c.type + (c.title!==c.type ? " — " + c.title : "") + (c.site ? " · " + c.site : "") + (c.live ? " · IN SESSION" : "");
+    o.textContent = c.type + (c.title!==c.type ? " — " + c.title : "") + (siteTag(c.site) ? " · " + siteTag(c.site) : "") + (c.live ? " · IN SESSION" : "");
     sel.appendChild(o);
   });
   sel.classList.toggle("hide", lcs.length < 2);
@@ -975,7 +1004,7 @@ function renderLiveConf(){
   var lc = chosenLiveConf();
   renderTracks(lc);
   if (lc){
-    document.getElementById("r-conf-name").textContent = lc.type + (lc.title!==lc.type ? " — " + lc.title : "") + (lc.site ? " · " + lc.site : "");
+    document.getElementById("r-conf-name").textContent = lc.type + (lc.title!==lc.type ? " — " + lc.title : "") + (siteTag(lc.site) ? " · " + siteTag(lc.site) : "");
     document.getElementById("r-conf-meta").textContent = lc.date + " · " + lc.time + (lc.live ? " · IN SESSION" : " · OPEN ALL DAY");
   } else {
     document.getElementById("r-conf-name").textContent = "No conference is scheduled today";
@@ -1040,6 +1069,7 @@ async function creditsLookup(){
     err.style.display="block"; return;
   }
   err.style.display="none";
+  rememberEmail(em);
   document.getElementById("cr-name").textContent = r.first + "'s conference credits";
   document.getElementById("cr-total").textContent = r.total.toFixed(0);
   document.getElementById("cr-ahd").textContent = r.ahdHalf + "/" + r.ahdOf;
@@ -1065,13 +1095,27 @@ function creditsBack(){
 }
 function residentReset(){
   currentResident = null;
-  document.getElementById("r-email").value = "";
+  document.getElementById("r-email").value = recalledEmail();   // keep their email for next visit
   boxes.forEach(function(b){ b.value=""; });
   document.getElementById("r-step2").classList.add("hide");
   document.getElementById("r-step3").classList.add("hide");
   document.getElementById("q-area").classList.add("hide");
   document.getElementById("r-credits").classList.add("hide");
   document.getElementById("r-step1").classList.remove("hide");
+}
+/* "Not you?" — the remembered email identified the wrong person (mistype, or a
+ * shared device), so forget it and let them type a different one. */
+function residentNotMe(){
+  forgetEmail();
+  currentResident = null;
+  boxes.forEach(function(b){ b.value=""; });
+  document.getElementById("r-step2").classList.add("hide");
+  document.getElementById("r-step3").classList.add("hide");
+  document.getElementById("q-area").classList.add("hide");
+  document.getElementById("r-credits").classList.add("hide");
+  document.getElementById("r-step1").classList.remove("hide");
+  var re = document.getElementById("r-email");
+  re.value = ""; re.focus();
 }
 async function showQArea(){
   try{ BOOT = await call('bootstrap'); }catch(e){}
@@ -1103,7 +1147,7 @@ function qOptions(){
     var o = document.createElement("option");
     o.value = c.id;
     o.textContent = c.date + " · " + c.type + (c.title!==c.type ? " — " + c.title : "") +
-      (c.site ? " (" + c.site + ")" : "") + (c.status==="Cancelled" ? " — no conference, Q-credit" : "");
+      (siteTag(c.site) ? " (" + siteTag(c.site) + ")" : "") + (c.status==="Cancelled" ? " — no conference, Q-credit" : "");
     sel.appendChild(o);
   });
 }
@@ -1151,45 +1195,73 @@ function compressImageFile(file){
     reader.readAsDataURL(file);
   });
 }
+function renderQFiles(){
+  var wrap = document.getElementById("q-files");
+  wrap.innerHTML = "";
+  qImages.forEach(function(im){
+    var chip = document.createElement("div");
+    chip.className = "file-chip";
+    chip.innerHTML =
+      '<span class="fx-name"></span>' +
+      '<span class="fx-size"></span>' +
+      '<button class="rm" title="Remove" aria-label="Remove screenshot">&times;</button>';
+    chip.querySelector(".fx-name").textContent = im.name;              // textContent = safe against odd filenames
+    chip.querySelector(".fx-size").textContent = im.pending ? "preparing…" : im.sizeLabel;
+    chip.querySelector(".rm").onclick = function(){ qRemoveImage(im.id); };
+    wrap.appendChild(chip);
+  });
+  document.getElementById("q-drop").classList.toggle("has", qImages.length > 0);
+}
+function qRemoveImage(id){
+  qImages = qImages.filter(function(im){ return im.id !== id; });
+  renderQFiles();
+}
 function qFilePicked(inp){
-  var f = inp.files[0];
-  if (!f) return;
-  if (f.size > 25*1024*1024){ toast("Please use an image under 25 MB."); inp.value=""; return; }
-  qImage = null;
-  document.getElementById("q-drop").classList.add("has");
-  document.getElementById("q-file").classList.remove("hide");
-  document.getElementById("q-fname").textContent = f.name;
-  document.getElementById("q-fsize").textContent = "preparing…";
-  compressImageFile(f).then(function(out){
-    qImage = { b64: out.b64, mediaType: out.mediaType, name: f.name };
-    var kb = Math.round((out.b64.length * 3 / 4) / 1024);   // approx decoded size
-    document.getElementById("q-fsize").textContent =
-      (kb >= 1024 ? (kb/1024).toFixed(1) + " MB" : kb + " KB") + " ✓";
-  }).catch(function(err){
-    qImage = null;
-    document.getElementById("q-drop").classList.remove("has");
-    document.getElementById("q-file").classList.add("hide");
-    inp.value = "";
-    toast(err && err.message ? err.message : "Couldn't process that image.");
+  var files = Array.prototype.slice.call(inp.files || []);
+  inp.value = "";                       // reset so the same file can be re-picked and more can be added later
+  files.forEach(function(f){
+    if (f.size > 25*1024*1024){ toast("Skipped " + f.name + " — over 25 MB."); return; }
+    var im = { id: ++qImgSeq, name: f.name, pending: true, b64: null, mediaType: null, sizeLabel: "" };
+    qImages.push(im);
+    renderQFiles();
+    compressImageFile(f).then(function(out){
+      im.b64 = out.b64; im.mediaType = out.mediaType; im.pending = false;
+      var kb = Math.round((out.b64.length * 3 / 4) / 1024);   // approx decoded size
+      im.sizeLabel = (kb >= 1024 ? (kb/1024).toFixed(1) + " MB" : kb + " KB") + " ✓";
+      renderQFiles();
+    }).catch(function(err){
+      qImages = qImages.filter(function(x){ return x !== im; });
+      renderQFiles();
+      toast(err && err.message ? err.message : "Couldn't process " + f.name + ".");
+    });
   });
 }
 async function qSubmit(){
   var confId = document.getElementById("q-conf").value;
   var em = document.getElementById("q-email").value.trim().toLowerCase();
-  var ok = confId && em.indexOf("@")>0 && qImage && document.getElementById("q-attest").checked;
   var err = document.getElementById("q-err");
+  var ready = qImages.filter(function(im){ return !im.pending && im.b64; });
+  var anyPending = qImages.some(function(im){ return im.pending; });
+  var attested = document.getElementById("q-attest").checked;
+  var ok = confId && em.indexOf("@")>0 && ready.length > 0 && attested;
   if (!ok){
-    err.textContent = (confId && em.indexOf("@")>0 && document.getElementById("q-attest").checked && !qImage)
-      ? "Your screenshot is still preparing — give it a second, then tap Submit again."
-      : "Please select a conference, enter your email, attach a screenshot, and confirm the attestation.";
+    err.textContent = (confId && em.indexOf("@")>0 && attested && ready.length===0 && anyPending)
+      ? "Your screenshot" + (qImages.length>1 ? "s are" : " is") + " still preparing — give it a second, then tap Submit again."
+      : "Please select a conference, enter your email, attach at least one screenshot, and confirm the attestation.";
+    err.style.display="block"; return;
+  }
+  if (anyPending){
+    err.textContent = "One or more screenshots are still preparing — give it a second, then tap Submit again.";
     err.style.display="block"; return;
   }
   err.style.display="none";
   document.getElementById("q-verifying").classList.remove("hide");
   var res;
   try{
-    res = await call('qSubmit', {email:em, confId:confId, b64:qImage.b64,
-      mediaType:qImage.mediaType, deviceId:deviceId()});
+    res = await call('qSubmit', {email:em, confId:confId,
+      images: ready.map(function(im){ return {b64: im.b64, mediaType: im.mediaType}; }),
+      b64: ready[0].b64, mediaType: ready[0].mediaType,   // back-compat if an older cached backend is still live
+      deviceId:deviceId()});
   }catch(e){
     document.getElementById("q-verifying").classList.add("hide");
     err.textContent = e.message; err.style.display="block"; return;
@@ -1199,23 +1271,33 @@ async function qSubmit(){
     err.textContent = res.reason==="deadline" ? "The submission deadline for that conference has passed (due by midnight)."
       : res.reason==="dupe" ? "A credit for that conference is already recorded for you."
       : res.reason==="roster" ? "No roster match for that email."
+      : res.reason==="noimage" ? "No screenshot was received — please re-attach and try again."
       : "That conference is not eligible for Q-credit.";
     err.style.display="block"; return;
   }
+  rememberEmail(em);
   var box = document.getElementById("q-ai-result");
   var title = document.getElementById("q-done-title");
   var reply = document.getElementById("q-reply-body");
+  var nShots = ready.length;
   if (res.verified){
     title.textContent = "Verified — credit approved";
     box.className = "ai-result pass";
-    document.getElementById("q-ai-rt").textContent = "Screenshot verified" + (res.questions ? " · " + res.questions + " questions identified" : "");
+    document.getElementById("q-ai-rt").textContent = "Screenshot" + (nShots>1?"s":"") + " verified" + (res.questions ? " · " + res.questions + " questions identified" : "");
     document.getElementById("q-ai-rd").textContent = res.reason || "Reviewed automatically";
     reply.innerHTML = "Your practice-question submission was <strong>verified and approved</strong>. Credit has posted to <strong>" + res.title + "</strong>. A confirmation email is on its way.";
+  } else if (res.reason == null){
+    // No AI configured: credit is recorded on submit, so don't imply limbo.
+    title.textContent = "Received — credit recorded";
+    box.className = "ai-result pass";
+    document.getElementById("q-ai-rt").textContent = "Credit recorded";
+    document.getElementById("q-ai-rd").textContent = "Your " + (nShots>1 ? nShots + " screenshots were" : "screenshot was") + " filed to Drive by date.";
+    reply.innerHTML = "Your submission was received and <strong>credit has been recorded</strong> for <strong>" + res.title + "</strong>.";
   } else {
     title.textContent = "Received — pending manual review";
     box.className = "ai-result review";
     document.getElementById("q-ai-rt").textContent = "Queued for chief review";
-    document.getElementById("q-ai-rd").textContent = res.reason || "A chief resident will review your screenshot.";
+    document.getElementById("q-ai-rd").textContent = res.reason || "A chief resident will review your " + (nShots>1?"screenshots.":"screenshot.");
     reply.innerHTML = "Your submission was received. If it shows 10 completed questions, credit will post to <strong>" + res.title + "</strong> and you'll receive a confirmation.";
   }
   document.getElementById("q-form").classList.add("hide");
@@ -1226,11 +1308,10 @@ async function qSubmit(){
 function qReset(){
   document.getElementById("q-done").classList.add("hide");
   document.getElementById("q-form").classList.remove("hide");
-  document.getElementById("q-drop").classList.remove("has");
-  document.getElementById("q-file").classList.add("hide");
   document.getElementById("q-fileinput").value = "";
   document.getElementById("q-attest").checked = false;
-  qImage = null;
+  qImages = [];
+  renderQFiles();
 }
 
 /* ============ PRESENTER ============ */
@@ -1245,7 +1326,7 @@ async function renderTodayButtons(){
   confs.forEach(function(c){
     var b = document.createElement("button");
     b.className = "sess-btn" + (c.id===presenterConf ? " on" : "");
-    b.innerHTML = '<div class="st">' + c.type + (c.title!==c.type ? ' — ' + c.title : '') + (c.site ? ' · ' + c.site : '') + '</div><div class="sm">' + c.time + (c.live ? " · IN SESSION" : "") + '</div>';
+    b.innerHTML = '<div class="st">' + c.type + (c.title!==c.type ? ' — ' + c.title : '') + (siteTag(c.site) ? ' · ' + siteTag(c.site) : '') + '</div><div class="sm">' + c.time + (c.live ? " · IN SESSION" : "") + '</div>';
     b.onclick = function(){ pickSession(c.id); };
     holder.appendChild(b);
   });
@@ -1350,10 +1431,6 @@ async function loadAdmin(){
 }
 function renderAdmin(){
   var D = ADMIN_DATA;
-  document.getElementById("a-present").textContent = D.stats.present;
-  document.getElementById("a-qcredit").textContent = D.stats.qcredit;
-  document.getElementById("a-confs").textContent = D.conferences.length;
-  document.getElementById("a-flagged").textContent = D.flags.length;
 
   /* schedule — one week at a time */
   var wkEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6);
@@ -1389,7 +1466,7 @@ function renderAdmin(){
       if (cancelled) row.style.opacity = ".72";
       row.innerHTML =
         '<div class="ci"><div class="ct">' + c.type + (c.title!==c.type ? ' — ' + c.title : '') + '</div>' +
-        '<div class="cm">' + (c.site ? c.site + ' · ' : '') + c.time + ' · CREDIT ' + c.credit.toFixed(1) + ' · ' + c.id + '</div>' +
+        '<div class="cm">' + (siteTag(c.site) ? siteTag(c.site) + ' · ' : '') + c.time + ' · CREDIT ' + c.credit.toFixed(1) + ' · ' + c.id + '</div>' +
         '<div class="badges">' + (c.live?'<span class="chip ok">IN SESSION</span>':'') +
         (cancelled?'<span class="chip" style="border-color:#E4C0B8;color:var(--brick)">CANCELLED</span>':'') +
         (c.qEligible?'<span class="chip info">Q-CREDIT ELIGIBLE</span>':'') +
@@ -1409,16 +1486,28 @@ function renderAdmin(){
         var cx = document.createElement("button");
         cx.className = "mini-btn"; cx.textContent = "Cancel → Q";
         cx.onclick = function(){
-          if (confirm("Cancel " + c.type + (c.site?" ("+c.site+")":"") + " on " + c.date + " and open it for 10-question credit?"))
+          if (confirm("Cancel " + c.type + " on " + c.date + " and open it for 10-question credit?"))
             cancelUI(c.id, true);
         };
         btns.appendChild(cx);
+        var cxn = document.createElement("button");
+        cxn.className = "mini-btn"; cxn.textContent = "Cancel (no Q)";
+        cxn.onclick = function(){
+          if (confirm("Cancel " + c.type + " on " + c.date + " with NO credit offered? Residents can't check in or submit Q-credit for it."))
+            cancelUI(c.id, false);
+        };
+        btns.appendChild(cxn);
       } else {
         var rs = document.createElement("button");
         rs.className = "mini-btn"; rs.textContent = "Restore";
         rs.onclick = function(){ restoreUI(c.id); };
         btns.appendChild(rs);
       }
+      var del = document.createElement("button");
+      del.className = "mini-btn"; del.textContent = "Delete";
+      del.style.cssText = "border-color:#E4C0B8;color:var(--brick)";
+      del.onclick = function(){ deleteRowUI(row, c); };
+      btns.appendChild(del);
       row.appendChild(btns);
       g.appendChild(row);
     });
@@ -1459,6 +1548,26 @@ function renderAdmin(){
       '<div class="fr"><span class="who">' + f.name + '</span><span class="chip warn" style="font-size:9px;padding:3px 8px">PGY-' + f.pgy + '</span>' +
       '<span class="mono" style="margin-left:auto;font-size:9.5px;color:var(--faint)">' + f.confId + ' · ' + f.time + '</span></div>' +
       '<div class="why">' + f.flags + '</div>';
+
+    var photos = f.photos || [];
+    if (photos.length){
+      var gallery = document.createElement("div"); gallery.className = "review-shots";
+      photos.forEach(function(url, i){
+        var cell = document.createElement("a");        // the thumbnail itself links to the full-res Drive view
+        cell.href = url; cell.target = "_blank"; cell.rel = "noopener";
+        cell.className = "shot-link"; cell.title = "Open full screenshot in Drive";
+        var img = document.createElement("img");
+        img.className = "review-shot"; img.alt = "screenshot " + (i + 1); img.style.opacity = ".35";
+        cell.appendChild(img);
+        gallery.appendChild(cell);
+        call('qPhoto', TOKEN, url).then(function(r){        // auto-loads a small thumbnail on render
+          if (r && r.ok){ img.src = "data:" + r.mediaType + ";base64," + r.b64; img.style.opacity = "1"; }
+          else { cell.removeChild(img); cell.textContent = "open screenshot " + (photos.length>1 ? (i+1) : "") + " ↗"; cell.classList.add("shot-fallback"); }
+        }).catch(function(){ cell.removeChild(img); cell.textContent = "open screenshot " + (photos.length>1 ? (i+1) : "") + " ↗"; cell.classList.add("shot-fallback"); });
+      });
+      d.appendChild(gallery);
+    }
+
     var q = document.createElement("div"); q.className = "qbtns";
     var a = document.createElement("button"); a.className="qbtn ok"; a.textContent="Approve credit";
     a.onclick = function(){ resolveFlagUI(f.logId, true); };
@@ -1477,7 +1586,7 @@ function editRow(row, c){
   f.innerHTML =
     '<input class="full" id="ed-title" value="' + String(c.title).replace(/"/g,'&quot;') + '" placeholder="Title">' +
     '<input id="ed-time" value="' + c.time + '" placeholder="Time (e.g., 12:00–13:00)">' +
-    '<select id="ed-site">' + ["BUMCT","South","VA",""].map(function(s){
+    '<select id="ed-site">' + ["All Sites","BUMCT","South","VA",""].map(function(s){
       return '<option value="'+s+'"'+(s===c.site?' selected':'')+'>'+(s||"—")+'</option>'; }).join("") + '</select>' +
     '<input id="ed-credit" type="number" step="0.5" min="0.5" value="' + c.credit + '">' +
     '<label class="tgl"><input type="checkbox" id="ed-q"' + (c.qEligible?' checked':'') + '> Q-credit eligible</label>';
@@ -1512,7 +1621,7 @@ async function cancelDayUI(dayStr){
 }
 async function cancelUI(confId, makeQ){
   try{ await call('cancelConference', TOKEN, confId, makeQ); }catch(e){ toast(e.message); return; }
-  notify("Cancelled — now accepting 10-question credit.");
+  notify(makeQ ? "Cancelled — now accepting 10-question credit." : "Cancelled — no conference credit offered.");
   loadAdmin();
 }
 async function restoreUI(confId){
@@ -1520,8 +1629,89 @@ async function restoreUI(confId){
   notify("Restored to the schedule.");
   loadAdmin();
 }
+function deleteRowUI(row, c){
+  var label = c.type + (c.title!==c.type ? " — " + c.title : "");
+  row.innerHTML = "";
+  var panel = document.createElement("div"); panel.style.cssText = "width:100%";
+  panel.innerHTML = '<div class="sub" style="font-size:12px;margin-bottom:8px">Delete <strong>' + label +
+    '</strong> (' + c.date + ')? Removes the listing only — recorded credits are protected.</div>';
+  var bar = document.createElement("div"); bar.style.cssText = "display:flex;gap:8px;flex-wrap:wrap";
+  var one = document.createElement("button"); one.className = "mini-btn";
+  one.style.cssText = "border-color:#E4C0B8;color:var(--brick)"; one.textContent = "Delete this one";
+  one.onclick = function(){ deleteConfUI(c.id, false); };
+  var fut = document.createElement("button"); fut.className = "mini-btn";
+  fut.style.cssText = "border-color:#E4C0B8;color:var(--brick)"; fut.textContent = "Delete all future copies";
+  fut.onclick = function(){
+    if (confirm('Delete "' + label + '" on ' + c.date + ' AND every future copy of it (same type/title/site, this date onward)? Any copy with recorded check-ins is skipped.'))
+      deleteConfUI(c.id, true);
+  };
+  var no = document.createElement("button"); no.className = "mini-btn"; no.textContent = "Keep";
+  no.onclick = function(){ renderAdmin(); };
+  bar.appendChild(one); bar.appendChild(fut); bar.appendChild(no);
+  panel.appendChild(bar); row.appendChild(panel);
+}
+async function deleteConfUI(confId, future){
+  var r;
+  try{ r = await call(future ? 'deleteFutureConferences' : 'deleteConference', TOKEN, confId); }
+  catch(e){ toast(e.message); return; }
+  if (!r || !r.ok){
+    if (r && r.reason === 'hasAttendance'){
+      toast("Can't delete — this listing has " + r.count + " check-in(s). Cancel it instead so credits aren't orphaned.");
+      loadAdmin(); return;
+    }
+    toast("Couldn't delete that listing."); return;
+  }
+  if (future) notify("Deleted " + r.deleted + " listing(s)" + (r.skipped ? " · " + r.skipped + " kept (had check-ins)" : "") + ".");
+  else notify("Listing deleted.");
+  loadAdmin();
+}
 async function resolveFlagUI(logId, approve){
   try{ await call('resolveFlag', TOKEN, logId, approve); }catch(e){ toast(e.message); return; }
+  loadAdmin();
+}
+async function scanDuplicates(){
+  var out = document.getElementById("dup-out");
+  out.innerHTML = '<p class="sub" style="margin-top:10px">Scanning…</p>';
+  var r;
+  try{ r = await call('duplicateReport', TOKEN); }
+  catch(e){ out.innerHTML = ""; toast(e.message); return; }
+  if (!r || !r.ok){ out.innerHTML = ""; toast("Couldn't scan."); return; }
+  if (!r.groups.length){
+    out.innerHTML = '<div class="msg ok" style="display:block">No exact-duplicate listings found across ' + r.totalConferences + ' conferences.</div>';
+    return;
+  }
+  var rows = r.groups.map(function(g){
+    var label = g.type + (g.title && g.title!==g.type ? " — " + g.title : "") + (siteTag(g.site) ? " · " + siteTag(g.site) : "");
+    var flag = g.withSignins ? ' <span class="chip warn" style="font-size:9px;padding:2px 7px">' + g.withSignins + ' with sign-ins — kept</span>' : '';
+    return '<tr><td class="mono" style="font-size:10.5px">' + g.date + '</td><td>' + label +
+      '</td><td class="mono" style="text-align:center">' + g.copies + '&times;</td><td>' + flag + '</td></tr>';
+  }).join("");
+  out.innerHTML =
+    '<div class="eyebrow" style="margin-top:14px">' + r.groups.length + ' duplicate group(s) · ' + r.redundantEmpty + ' empty copies removable</div>' +
+    '<table class="roster-tbl"><tr><th>Date</th><th>Listing</th><th>Copies</th><th></th></tr>' + rows + '</table>';
+  if (r.redundantEmpty > 0){
+    var btn = document.createElement("button");
+    btn.className = "btn btn-primary"; btn.style.marginTop = "12px";
+    btn.textContent = "Remove " + r.redundantEmpty + " empty duplicate(s)";
+    btn.onclick = function(){
+      if (confirm("Remove " + r.redundantEmpty + " empty duplicate listing(s)? Copies with recorded sign-ins are kept, and one copy of every offering is preserved. Resident sign-ins are not affected."))
+        removeDupesUI();
+    };
+    out.appendChild(btn);
+  } else {
+    var note = document.createElement("p");
+    note.className = "sub"; note.style.marginTop = "10px";
+    note.textContent = "All duplicate copies here have sign-ins, so nothing is auto-removable. Use a row's Delete button to handle these individually.";
+    out.appendChild(note);
+  }
+}
+async function removeDupesUI(){
+  var out = document.getElementById("dup-out");
+  var r;
+  try{ r = await call('removeEmptyDuplicates', TOKEN); }
+  catch(e){ toast(e.message); return; }
+  if (!r || !r.ok){ toast("Couldn't remove duplicates."); return; }
+  out.innerHTML = '<div class="msg ok" style="display:block">Removed ' + r.deleted + ' empty duplicate listing(s). Sign-ins were not affected.</div>';
   loadAdmin();
 }
 async function addConference(){
@@ -1696,12 +1886,32 @@ function pointomaticPreview(){
   var lines = Object.keys(houseTotals).map(function(h){
     return "&bull; House " + h + ": <strong>" + houseTotals[h].toFixed(1) + "</strong> pts";
   }).join("<br>");
-  document.getElementById("pom-out").innerHTML =
+  var out = document.getElementById("pom-out");
+  out.innerHTML =
     '<div class="reply-prev" style="margin-top:12px">' +
-    '<div class="fr">WEEKLY SYNC &middot; MON 06:00 &middot; POINT-O-MATIC HOUSE CUP SHEET</div>' +
-    'Current totals that will post:<br><br>' + lines + '<br><br>' +
-    'Enable by pasting the Point-o-matic spreadsheet ID into CONFIG.POINTOMATIC_SHEET_ID in Code.gs.' +
+    '<div class="fr">POINT-O-MATIC SYNC &middot; POINTS TAB &middot; SHARED CHIEFS ACCOUNT</div>' +
+    'Updates each resident\'s conference-points row <strong>in place</strong> (adds one only if they don\'t have one yet). It never deletes rows and never touches manual awards, raffles, bounties, or any other point entries. House totals that will post:<br><br>' + lines +
     '</div>';
+  var btn = document.createElement("button");
+  btn.className = "btn btn-primary"; btn.style.marginTop = "10px";
+  btn.textContent = "Push to Point-o-matic now";
+  btn.onclick = pointomaticSyncNow;
+  out.appendChild(btn);
+}
+async function pointomaticSyncNow(){
+  var out = document.getElementById("pom-out");
+  var r;
+  try{ r = await call('syncPointomaticNow', TOKEN); }
+  catch(e){ toast(e.message); return; }
+  if (!r || !r.ok){
+    out.innerHTML = '<div class="msg err" style="display:block">Sync failed: ' + ((r && r.error) || 'unknown error') + '</div>';
+    return;
+  }
+  var houseLines = Object.keys(r.houses||{}).map(function(h){
+    return "&bull; House " + h + ": <strong>" + Number(r.houses[h]).toFixed(1) + "</strong> pts";
+  }).join("<br>");
+  out.innerHTML = '<div class="msg ok" style="display:block">Synced ' + r.residents + ' resident(s) — ' +
+    (r.updated||0) + ' updated, ' + (r.added||0) + ' added. No rows were deleted.<br>' + houseLines + '</div>';
 }
 async function showExport(kind){
   var confId = document.getElementById("exp-conf").value;
