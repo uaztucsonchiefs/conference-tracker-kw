@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -497,6 +496,71 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
 
 </section>
 
+<!-- ==================== PEAC ==================== -->
+<section class="view" id="v-peac">
+
+  <div class="card" id="pe-gate">
+    <div class="eyebrow">Clinic week modules</div>
+    <h2>Johns Hopkins PEAC</h2>
+    <p class="sub">Each clinic week your group completes an assigned PEAC module (required), with an optional second module worth <strong>one conference credit</strong> if finished during your clinic week. Enter your program email to see your assignments.</p>
+    <label class="fld">Your email</label>
+    <input type="email" id="pe-email" placeholder="you@arizona.edu" inputmode="email">
+    <div class="msg err" id="pe-gate-err">No roster match for that email.</div>
+    <div style="margin-top:12px"><button class="btn btn-primary" onclick="peacLoad()">View my modules</button></div>
+  </div>
+
+  <div class="hide" id="pe-main">
+    <div class="card" style="padding:13px 15px">
+      <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+        <span class="chip ok" id="pe-group">—</span>
+        <span class="chip info" id="pe-week">—</span>
+        <span class="chip mono" id="pe-deadline">—</span>
+        <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="peacReset()">Not you?</button>
+      </div>
+      <p class="sub hide" id="pe-notweek" style="margin-top:9px">—</p>
+    </div>
+
+    <div class="card" id="pe-req-card">
+      <div class="eyebrow">Required module · mandatory</div>
+      <h3 id="pe-req-title">—</h3>
+      <p class="sub" style="margin-top:4px">Required for your clinic week. Late submissions are accepted but marked late. This one doesn't earn a conference credit.</p>
+      <a class="dl-link hide" id="pe-req-link" href="#" target="_blank" rel="noopener">Open module ↗</a>
+      <div class="msg ok" id="pe-req-done" style="margin-top:10px">—</div>
+      <div id="pe-req-form">
+        <div class="dropzone" id="pe-req-drop" onclick="document.getElementById('pe-req-file').click()">
+          <div class="dz-t">Add completion screenshot(s)</div>
+          <div class="dz-s">PNG · JPG — COMPRESSED ON YOUR PHONE, FILED TO THE PEAC DRIVE FOLDER</div>
+        </div>
+        <input type="file" id="pe-req-file" accept="image/png,image/jpeg,image/webp" hidden multiple onchange="peacFilePicked(this,'required')">
+        <div id="pe-req-files"></div>
+        <label class="attest"><input type="checkbox" id="pe-req-attest"><span>I completed this PEAC module myself. I understand falsifying completion records is a professionalism concern.</span></label>
+        <button class="btn btn-primary" onclick="peacSend('required')">Submit required module</button>
+        <div class="msg err" id="pe-req-err">—</div>
+      </div>
+    </div>
+
+    <div class="card" id="pe-opt-card">
+      <div class="eyebrow" style="color:var(--sky)">Optional module · +1 conference credit</div>
+      <h3 id="pe-opt-title">—</h3>
+      <p class="sub" style="margin-top:4px" id="pe-opt-blurb">Optional. Worth one conference credit if submitted during your clinic week by your deadline.</p>
+      <a class="dl-link hide" id="pe-opt-link" href="#" target="_blank" rel="noopener">Open module ↗</a>
+      <div class="msg ok" id="pe-opt-done" style="margin-top:10px">—</div>
+      <div id="pe-opt-form">
+        <div class="dropzone" id="pe-opt-drop" onclick="document.getElementById('pe-opt-file').click()">
+          <div class="dz-t">Add completion screenshot(s)</div>
+          <div class="dz-s">PNG · JPG — COMPRESSED ON YOUR PHONE, FILED TO THE PEAC DRIVE FOLDER</div>
+        </div>
+        <input type="file" id="pe-opt-file" accept="image/png,image/jpeg,image/webp" hidden multiple onchange="peacFilePicked(this,'optional')">
+        <div id="pe-opt-files"></div>
+        <label class="attest"><input type="checkbox" id="pe-opt-attest"><span>I completed this PEAC module myself. I understand falsifying completion records is a professionalism concern.</span></label>
+        <button class="btn btn-primary" onclick="peacSend('optional')">Submit optional module</button>
+        <div class="msg err" id="pe-opt-err">—</div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
 <!-- ==================== CHIEFS SIGN-IN ==================== -->
 <section class="view" id="v-login">
   <div class="card" style="max-width:400px;margin-left:auto;margin-right:auto">
@@ -681,6 +745,20 @@ footer{max-width:540px;margin:20px auto 0;text-align:center;font-family:var(--mo
   </div>
 
   <div class="card">
+    <div class="eyebrow" style="color:var(--sky)">PEAC · clinic week review</div>
+    <p class="sub">This week's clinic group, their assigned modules, and who has submitted. Thumbnails link to the full screenshot; Deny removes an optional module's conference credit.</p>
+    <button class="btn btn-ghost" style="margin-top:10px" onclick="loadPeacReview()">Load this week's PEAC status</button>
+    <div id="peac-rev-out"></div>
+  </div>
+
+  <div class="card">
+    <div class="eyebrow" style="color:var(--adobe)">AHD attendance check</div>
+    <p class="sub">A half-day only counts when all <strong>three</strong> hours are checked in. Residents with 1–2 of 3 hours on an AHD date are usually a missed scan, not a real absence — review them here and credit the missing hour(s) if appropriate.</p>
+    <button class="btn btn-ghost" style="margin-top:10px" onclick="loadAhdCheck()">Scan for partial AHD attendance</button>
+    <div id="ahd-out"></div>
+  </div>
+
+  <div class="card">
     <div class="eyebrow">Credit totals · House Cup tally</div>
     <p class="sub">One point per conference attended (each AHD hour is its own point). The AHD columns track the program requirement separately: a half-day counts only when all three hours are attended, with a goal of ≥50% of offered half-days.</p>
     <div id="tally-out"></div>
@@ -806,6 +884,12 @@ function notify(msg){ toast(msg, false); }
 /* Program-wide conferences carry the pseudo-site "All Sites" — a marker, not a
  * real location — so hide it in the UI. Real sites (BUMCT/VA/South) still show. */
 function siteTag(s){ return (s && s !== 'All Sites') ? s : ''; }
+/* AHD hours display as just "AHD" — the time disambiguates the hour, so the
+ * "Hour 1/2/3" (or legacy "AHD Hour N") title is redundant on screen. */
+function confLabel(type, title){
+  if (type === 'AHD' && /^(AHD\s*)?Hour\s*\d$/i.test(String(title||''))) return type;
+  return type + (title && title !== type ? " — " + title : "");
+}
 
 /* ============ STATE ============ */
 var BOOT = null;              /* bootstrap payload */
@@ -863,8 +947,8 @@ var ADMIN = !!TOKEN;
 function renderTabs(active){
   var t = document.getElementById("tabs");
   var defs = ADMIN
-    ? [["resident","Check-In"],["presenter","Presenter"],["admin","Admin"]]
-    : [["resident","Check-In"],["login","Chiefs"]];
+    ? [["resident","Check-In"],["peac","PEAC"],["presenter","Presenter"],["admin","Admin"]]
+    : [["resident","Check-In"],["peac","PEAC"],["login","Chiefs"]];
   t.style.gridTemplateColumns = "repeat(" + defs.length + ",1fr)";
   t.innerHTML = "";
   defs.forEach(function(d){
@@ -883,6 +967,7 @@ function go(btn){
   document.getElementById("v-"+v).classList.add("on");
   document.getElementById("wrap").classList.toggle("admin-wide", v==="admin");
   if (v==="admin") loadAdmin();
+  if (v==="peac") peacInit();
   if (v==="presenter") renderTodayButtons();
   if (v!=="presenter") stopPresenterPolling();
   window.scrollTo({top:0});
@@ -913,10 +998,15 @@ document.addEventListener("keydown", function(e){
 });
 
 /* ============ BOOTSTRAP ============ */
+var PENDING_CONF = null;   // conference preselected by a scanned QR (?conf=...)
 async function boot(){
   console.log("Conference Tracker front-end · build " + APP_VERSION);
   var bs = document.getElementById("build-stamp");
   if (bs) bs.textContent = "BUILD " + APP_VERSION;
+  try{ PENDING_CONF = new URLSearchParams(location.search).get("conf") || null; }catch(e){}
+  if (!PENDING_CONF && typeof google !== "undefined" && google.script && google.script.url && google.script.url.getLocation){
+    try{ google.script.url.getLocation(function(loc){ PENDING_CONF = (loc.parameter && loc.parameter.conf) || null; }); }catch(e){}
+  }
   var savedEmail = recalledEmail();
   if (savedEmail){
     var re = document.getElementById("r-email"); if (re && !re.value) re.value = savedEmail;
@@ -950,10 +1040,14 @@ async function residentLookup(){
   lcs.forEach(function(c){
     var o = document.createElement("option");
     o.value = c.id;
-    o.textContent = c.type + (c.title!==c.type ? " — " + c.title : "") + (siteTag(c.site) ? " · " + siteTag(c.site) : "") + (c.live ? " · IN SESSION" : "");
+    o.textContent = confLabel(c.type, c.title) + (siteTag(c.site) ? " · " + siteTag(c.site) : "") + (c.live ? " · IN SESSION" : "");
     sel.appendChild(o);
   });
   sel.classList.toggle("hide", lcs.length < 2);
+  // If the resident arrived via a session QR, preselect that session
+  if (PENDING_CONF && lcs.some(function(c){ return c.id === PENDING_CONF; })){
+    sel.value = PENDING_CONF;
+  }
   renderLiveConf();
   document.getElementById("r-step1").classList.add("hide");
   document.getElementById("r-step2").classList.remove("hide");
@@ -1004,7 +1098,7 @@ function renderLiveConf(){
   var lc = chosenLiveConf();
   renderTracks(lc);
   if (lc){
-    document.getElementById("r-conf-name").textContent = lc.type + (lc.title!==lc.type ? " — " + lc.title : "") + (siteTag(lc.site) ? " · " + siteTag(lc.site) : "");
+    document.getElementById("r-conf-name").textContent = confLabel(lc.type, lc.title) + (siteTag(lc.site) ? " · " + siteTag(lc.site) : "");
     document.getElementById("r-conf-meta").textContent = lc.date + " · " + lc.time + (lc.live ? " · IN SESSION" : " · OPEN ALL DAY");
   } else {
     document.getElementById("r-conf-name").textContent = "No conference is scheduled today";
@@ -1146,7 +1240,7 @@ function qOptions(){
   elig.forEach(function(c){
     var o = document.createElement("option");
     o.value = c.id;
-    o.textContent = c.date + " · " + c.type + (c.title!==c.type ? " — " + c.title : "") +
+    o.textContent = c.date + " · " + confLabel(c.type, c.title) +
       (siteTag(c.site) ? " (" + siteTag(c.site) + ")" : "") + (c.status==="Cancelled" ? " — no conference, Q-credit" : "");
     sel.appendChild(o);
   });
@@ -1314,6 +1408,156 @@ function qReset(){
   renderQFiles();
 }
 
+/* ============ PEAC ============ */
+var peacCtx = null;
+var peacImgs = { required: [], optional: [] };
+var peacSeq = 0;
+function peacInit(){
+  var em = document.getElementById("pe-email");
+  if (em && !em.value) em.value = recalledEmail();
+  if (peacCtx) peacRender();   // already loaded this visit
+}
+async function peacLoad(){
+  var em = document.getElementById("pe-email").value.trim().toLowerCase();
+  var err = document.getElementById("pe-gate-err");
+  if (!em || em.indexOf("@")<1){ err.textContent="Enter your program email."; err.style.display="block"; return; }
+  var ctx;
+  try{ ctx = await call('peacContext', em); }
+  catch(e){ err.textContent = e.message; err.style.display="block"; return; }
+  if (!ctx.ok){
+    err.textContent = ctx.reason==="nogroup"
+      ? "You're on the roster but not assigned to a clinic group yet — let a chief resident know."
+      : "No roster match for that email. Check the spelling, or contact a chief resident.";
+    err.style.display="block"; return;
+  }
+  err.style.display="none";
+  rememberEmail(em);
+  peacCtx = ctx; peacCtx._email = em;
+  peacImgs = { required: [], optional: [] };
+  peacRender();
+}
+function peacRender(){
+  var c = peacCtx;
+  document.getElementById("pe-gate").classList.add("hide");
+  document.getElementById("pe-main").classList.remove("hide");
+  document.getElementById("pe-group").textContent = "GROUP " + c.group + " · " + c.groupName.toUpperCase();
+  document.getElementById("pe-week").textContent = c.isClinicWeekNow
+    ? "CLINIC WEEK · " + c.clinicWeekMonday
+    : "LAST CLINIC WEEK · " + c.clinicWeekMonday;
+  document.getElementById("pe-deadline").textContent = "DUE " + c.deadline.toUpperCase();
+  var nw = document.getElementById("pe-notweek");
+  if (!c.isClinicWeekNow){
+    nw.textContent = "It isn't your clinic week right now — shown below is your most recent clinic week ("
+      + c.clinicWeekMonday + ")." + (c.nextClinicMonday ? " Your next clinic week starts " + c.nextClinicMonday + "." : "");
+    nw.classList.remove("hide");
+  } else nw.classList.add("hide");
+  peacRenderModule('required', c.required, c);
+  peacRenderModule('optional', c.optional, c);
+}
+function peacRenderModule(kind, m, c){
+  var p = kind==='required' ? 'pe-req' : 'pe-opt';
+  document.getElementById(p+"-title").textContent = m.title || "(module not set yet — check back soon)";
+  var link = document.getElementById(p+"-link");
+  if (m.url){ link.href = m.url; link.classList.remove("hide"); } else link.classList.add("hide");
+  var done = document.getElementById(p+"-done");
+  var form = document.getElementById(p+"-form");
+  if (kind==='optional'){
+    var blurb = document.getElementById("pe-opt-blurb");
+    blurb.textContent = c.optionalCreditOpen
+      ? "Optional. Worth one conference credit if submitted by your deadline."
+      : "The credit window for this clinic week has closed (deadline passed). You can still submit for completion, but no conference credit is awarded.";
+  }
+  if (m.sub && m.sub.submitted){
+    done.textContent = (kind==='required')
+      ? ("Submitted " + m.sub.when + (m.sub.onTime ? " · on time ✓" : " · late (recorded)"))
+      : ("Submitted " + m.sub.when + (m.sub.onTime ? " · on time ✓ · +1 conference credit recorded" : " · after deadline — no credit, completion recorded"));
+    done.style.display = "block";
+    form.classList.add("hide");
+  } else {
+    done.style.display = "none";
+    form.classList.remove("hide");
+  }
+}
+function renderPeacFiles(kind){
+  var p = kind==='required' ? 'pe-req' : 'pe-opt';
+  var wrap = document.getElementById(p+"-files");
+  wrap.innerHTML = "";
+  peacImgs[kind].forEach(function(im){
+    var chip = document.createElement("div");
+    chip.className = "file-chip";
+    chip.innerHTML = '<span class="fx-name"></span><span class="fx-size"></span><button class="rm" title="Remove" aria-label="Remove screenshot">&times;</button>';
+    chip.querySelector(".fx-name").textContent = im.name;
+    chip.querySelector(".fx-size").textContent = im.pending ? "preparing…" : im.sizeLabel;
+    chip.querySelector(".rm").onclick = function(){
+      peacImgs[kind] = peacImgs[kind].filter(function(x){ return x.id !== im.id; });
+      renderPeacFiles(kind);
+    };
+    wrap.appendChild(chip);
+  });
+  document.getElementById(p+"-drop").classList.toggle("has", peacImgs[kind].length > 0);
+}
+function peacFilePicked(inp, kind){
+  var files = Array.prototype.slice.call(inp.files || []);
+  inp.value = "";
+  files.forEach(function(f){
+    if (f.size > 25*1024*1024){ toast("Skipped " + f.name + " — over 25 MB."); return; }
+    var im = { id: ++peacSeq, name: f.name, pending: true, b64: null, mediaType: null, sizeLabel: "" };
+    peacImgs[kind].push(im);
+    renderPeacFiles(kind);
+    compressImageFile(f).then(function(out){
+      im.b64 = out.b64; im.mediaType = out.mediaType; im.pending = false;
+      var kb = Math.round((out.b64.length * 3 / 4) / 1024);
+      im.sizeLabel = (kb >= 1024 ? (kb/1024).toFixed(1) + " MB" : kb + " KB") + " ✓";
+      renderPeacFiles(kind);
+    }).catch(function(err){
+      peacImgs[kind] = peacImgs[kind].filter(function(x){ return x !== im; });
+      renderPeacFiles(kind);
+      toast(err && err.message ? err.message : "Couldn't process " + f.name + ".");
+    });
+  });
+}
+async function peacSend(kind){
+  var p = kind==='required' ? 'pe-req' : 'pe-opt';
+  var err = document.getElementById(p+"-err");
+  var ready = peacImgs[kind].filter(function(im){ return !im.pending && im.b64; });
+  var anyPending = peacImgs[kind].some(function(im){ return im.pending; });
+  if (!document.getElementById(p+"-attest").checked || !ready.length){
+    err.textContent = (ready.length===0 && anyPending)
+      ? "Your screenshot is still preparing — give it a second, then tap Submit again."
+      : "Attach at least one screenshot and confirm the attestation.";
+    err.style.display = "block"; return;
+  }
+  if (anyPending){ err.textContent = "One or more screenshots are still preparing — give it a second."; err.style.display="block"; return; }
+  err.style.display = "none";
+  var res;
+  try{
+    res = await call('peacSubmit', { email: peacCtx._email, kind: kind,
+      images: ready.map(function(im){ return { b64: im.b64, mediaType: im.mediaType }; }),
+      deviceId: deviceId() });
+  }catch(e){ err.textContent = e.message; err.style.display="block"; return; }
+  if (!res.ok){
+    err.textContent = res.reason==="dupe" ? "You've already submitted this module for this clinic week."
+      : res.reason==="noimage" ? "No screenshot was received — please re-attach and try again."
+      : res.reason==="nogroup" ? "You're not assigned to a clinic group — let a chief know."
+      : "No roster match for that email.";
+    err.style.display = "block"; return;
+  }
+  notify(kind==='required'
+    ? (res.onTime ? "Required module recorded — on time. Nice work!" : "Required module recorded (marked late).")
+    : (res.credited ? "Optional module recorded — +1 conference credit!" : "Optional module recorded — after the deadline, so no credit this time."));
+  peacImgs[kind] = [];
+  try{ peacCtx = await call('peacContext', peacCtx._email); peacCtx._email = document.getElementById("pe-email").value.trim().toLowerCase(); }catch(e){}
+  peacRender();
+}
+function peacReset(){
+  peacCtx = null;
+  peacImgs = { required: [], optional: [] };
+  document.getElementById("pe-main").classList.add("hide");
+  document.getElementById("pe-gate").classList.remove("hide");
+  var em = document.getElementById("pe-email");
+  em.value = ""; em.focus();
+}
+
 /* ============ PRESENTER ============ */
 async function renderTodayButtons(){
   try{ BOOT = await call('bootstrap'); }catch(e){}
@@ -1326,7 +1570,7 @@ async function renderTodayButtons(){
   confs.forEach(function(c){
     var b = document.createElement("button");
     b.className = "sess-btn" + (c.id===presenterConf ? " on" : "");
-    b.innerHTML = '<div class="st">' + c.type + (c.title!==c.type ? ' — ' + c.title : '') + (siteTag(c.site) ? ' · ' + siteTag(c.site) : '') + '</div><div class="sm">' + c.time + (c.live ? " · IN SESSION" : "") + '</div>';
+    b.innerHTML = '<div class="st">' + confLabel(c.type, c.title) + (siteTag(c.site) ? ' · ' + siteTag(c.site) : '') + '</div><div class="sm">' + c.time + (c.live ? " · IN SESSION" : "") + '</div>';
     b.onclick = function(){ pickSession(c.id); };
     holder.appendChild(b);
   });
@@ -1346,6 +1590,7 @@ async function fillAllSelect(){
 function presenterPick(){ pickSession(document.getElementById("p-select").value); }
 async function pickSession(id){
   presenterConf = id;
+  lastCode = "";   // force QR + code refresh with the newly selected session
   try{ await call('openConference', TOKEN, id); }
   catch(e){ toast(e.message); return; }
   renderTodayButtons();
@@ -1397,7 +1642,9 @@ async function pollPresenter(){
     var box = document.getElementById("qrbox");
     box.innerHTML = "";
     if (window.QRCode && BOOT.webAppUrl){
-      new QRCode(box, {text: BOOT.webAppUrl, width:145, height:145,
+      // Carry the presenter's chosen session in the QR so scanning preselects it
+      var qrUrl = BOOT.webAppUrl + (BOOT.webAppUrl.indexOf("?")<0 ? "?" : "&") + "conf=" + encodeURIComponent(presenterConf);
+      new QRCode(box, {text: qrUrl, width:145, height:145,
         colorDark:"#2A6F50", colorLight:"#ffffff", correctLevel:QRCode.CorrectLevel.M});
     }
   }
@@ -1465,7 +1712,7 @@ function renderAdmin(){
       row.className = "conf-row" + (c.live ? " live" : "");
       if (cancelled) row.style.opacity = ".72";
       row.innerHTML =
-        '<div class="ci"><div class="ct">' + c.type + (c.title!==c.type ? ' — ' + c.title : '') + '</div>' +
+        '<div class="ci"><div class="ct">' + confLabel(c.type, c.title) + '</div>' +
         '<div class="cm">' + (siteTag(c.site) ? siteTag(c.site) + ' · ' : '') + c.time + ' · CREDIT ' + c.credit.toFixed(1) + ' · ' + c.id + '</div>' +
         '<div class="badges">' + (c.live?'<span class="chip ok">IN SESSION</span>':'') +
         (cancelled?'<span class="chip" style="border-color:#E4C0B8;color:var(--brick)">CANCELLED</span>':'') +
@@ -1630,7 +1877,7 @@ async function restoreUI(confId){
   loadAdmin();
 }
 function deleteRowUI(row, c){
-  var label = c.type + (c.title!==c.type ? " — " + c.title : "");
+  var label = confLabel(c.type, c.title);
   row.innerHTML = "";
   var panel = document.createElement("div"); panel.style.cssText = "width:100%";
   panel.innerHTML = '<div class="sub" style="font-size:12px;margin-bottom:8px">Delete <strong>' + label +
@@ -1668,6 +1915,106 @@ async function deleteConfUI(confId, future){
 async function resolveFlagUI(logId, approve){
   try{ await call('resolveFlag', TOKEN, logId, approve); }catch(e){ toast(e.message); return; }
   loadAdmin();
+}
+async function loadPeacReview(){
+  var out = document.getElementById("peac-rev-out");
+  out.innerHTML = '<p class="sub" style="margin-top:10px">Loading…</p>';
+  var r;
+  try{ r = await call('peacReviewData', TOKEN); }
+  catch(e){ out.innerHTML = ""; toast(e.message); return; }
+  if (!r || !r.ok){ out.innerHTML = ""; toast("Couldn't load PEAC status."); return; }
+  var head =
+    '<div class="eyebrow" style="margin-top:14px">Group ' + r.group + ' · ' + r.groupName + ' · week of ' + r.clinicWeek + '</div>' +
+    '<p class="sub" style="margin-bottom:4px">Required: <strong>' + (r.requiredTitle || "not set") + '</strong> — ' + r.counts.requiredDone + '/' + r.counts.total + ' submitted<br>' +
+    'Optional: <strong>' + (r.optionalTitle || "not set") + '</strong> — ' + r.counts.optionalDone + '/' + r.counts.total + ' submitted</p>';
+  out.innerHTML = head;
+  function statusCell(s, kind){
+    if (!s) return '<span class="chip" style="font-size:9px;padding:3px 8px">—</span>';
+    var chip = s.onTime
+      ? '<span class="chip ok" style="font-size:9px;padding:3px 8px">' + (kind==='Optional' ? 'ON TIME · +1' : 'ON TIME') + '</span>'
+      : '<span class="chip warn" style="font-size:9px;padding:3px 8px">LATE</span>';
+    return chip;
+  }
+  r.residents.forEach(function(x){
+    var d = document.createElement("div");
+    d.className = "flag-item";
+    d.style.borderLeftColor = (x.required ? "var(--saguaro)" : "var(--brick)");
+    d.innerHTML =
+      '<div class="fr"><span class="who">' + x.name + '</span><span class="chip" style="font-size:9px;padding:3px 8px">PGY-' + x.pgy + '</span>' +
+      '<span style="margin-left:auto;display:flex;gap:5px;align-items:center"><span class="mono" style="font-size:9px;color:var(--faint)">REQ</span>' + statusCell(x.required,'Required') +
+      '<span class="mono" style="font-size:9px;color:var(--faint)">OPT</span>' + statusCell(x.optional,'Optional') + '</span></div>';
+    [['Required', x.required], ['Optional', x.optional]].forEach(function(pair){
+      var kind = pair[0], s = pair[1];
+      if (!s) return;
+      var gallery = document.createElement("div"); gallery.className = "review-shots";
+      (s.photos||[]).forEach(function(url, i){
+        var cell = document.createElement("a");
+        cell.href = url; cell.target = "_blank"; cell.rel = "noopener";
+        cell.className = "shot-link"; cell.title = "Open full screenshot in Drive";
+        var img = document.createElement("img");
+        img.className = "review-shot"; img.alt = kind + " screenshot " + (i+1); img.style.opacity = ".35";
+        cell.appendChild(img); gallery.appendChild(cell);
+        call('peacPhoto', TOKEN, url).then(function(pr){
+          if (pr && pr.ok){ img.src = "data:" + pr.mediaType + ";base64," + pr.b64; img.style.opacity = "1"; }
+          else { cell.removeChild(img); cell.textContent = "open " + kind.toLowerCase() + " screenshot ↗"; cell.classList.add("shot-fallback"); }
+        }).catch(function(){ cell.removeChild(img); cell.textContent = "open " + kind.toLowerCase() + " screenshot ↗"; cell.classList.add("shot-fallback"); });
+      });
+      d.appendChild(gallery);
+      if (!s.resolved){
+        var q = document.createElement("div"); q.className = "qbtns";
+        var a = document.createElement("button"); a.className = "qbtn ok"; a.textContent = "Approve " + kind.toLowerCase();
+        a.onclick = function(){ peacResolveUI(s.logId, true); };
+        var n = document.createElement("button"); n.className = "qbtn no";
+        n.textContent = kind==='Optional' ? "Deny (removes credit)" : "Deny required";
+        n.onclick = function(){ peacResolveUI(s.logId, false); };
+        q.appendChild(a); q.appendChild(n); d.appendChild(q);
+      }
+    });
+    out.appendChild(d);
+  });
+}
+async function peacResolveUI(logId, approve){
+  try{ await call('peacResolve', TOKEN, logId, approve); }catch(e){ toast(e.message); return; }
+  notify(approve ? "Approved." : "Denied.");
+  loadPeacReview();
+}
+async function loadAhdCheck(){
+  var out = document.getElementById("ahd-out");
+  out.innerHTML = '<p class="sub" style="margin-top:10px">Scanning attendance…</p>';
+  var r;
+  try{ r = await call('ahdPartialReport', TOKEN); }
+  catch(e){ out.innerHTML = ""; toast(e.message); return; }
+  if (!r || !r.ok){ out.innerHTML = ""; toast("Couldn't run the AHD check."); return; }
+  if (!r.partials.length){
+    out.innerHTML = '<div class="msg ok" style="display:block">No partial AHD attendance found across ' + r.datesChecked + ' half-day(s). Everyone either attended all three hours or none.</div>';
+    return;
+  }
+  out.innerHTML = '<div class="eyebrow" style="margin-top:14px">' + r.partials.length + ' partial attendance(s) across ' + r.datesChecked + ' half-day(s)</div>';
+  r.partials.forEach(function(p){
+    var d = document.createElement("div");
+    d.className = "flag-item";
+    d.innerHTML =
+      '<div class="fr"><span class="who">' + p.name + '</span><span class="chip warn" style="font-size:9px;padding:3px 8px">PGY-' + p.pgy + '</span>' +
+      '<span class="mono" style="margin-left:auto;font-size:9.5px;color:var(--faint)">' + p.date + '</span></div>' +
+      '<div class="why">Attended ' + p.attended.join(" + ") + ' · missing ' + p.missing.map(function(m){ return m.label; }).join(" + ") +
+      ' — no half-day credit until all three hours are recorded.</div>';
+    var q = document.createElement("div"); q.className = "qbtns";
+    var fix = document.createElement("button"); fix.className = "qbtn ok";
+    fix.textContent = "Credit missing " + (p.missing.length>1 ? "hours" : "hour") + " (" + p.missing.map(function(m){ return m.label; }).join(", ") + ")";
+    fix.onclick = function(){
+      if (confirm("Manually credit " + p.name + " for " + p.missing.map(function(m){ return m.label; }).join(" and ") + " on " + p.date + "?"))
+        ahdFixUI(p.email, p.missing.map(function(m){ return m.confId; }));
+    };
+    q.appendChild(fix); d.appendChild(q);
+    out.appendChild(d);
+  });
+}
+async function ahdFixUI(email, confIds){
+  var r;
+  try{ r = await call('ahdFixCredit', TOKEN, email, confIds); }
+  catch(e){ toast(e.message); return; }
+  notify("Credited " + r.credited + " hour(s) — half-day now complete.");
+  loadAhdCheck();
 }
 async function scanDuplicates(){
   var out = document.getElementById("dup-out");
